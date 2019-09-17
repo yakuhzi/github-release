@@ -3,11 +3,10 @@
 # It is recommended not to check these in https://github.com/actions/toolkit/blob/master/docs/action-versioning.md#recommendations
 
 git checkout -b releases/v1
-rm -rf node_modules
+rm -rf node_modules dist
 npm install --production
-git add -f node_modules
-npm run build
-git add -f dist
+npm run tsc
+git add -f node_modules dist
 git commit -m "update node_modules & dist"
 git push -f origin releases/v1
 
