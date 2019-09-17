@@ -7,7 +7,7 @@ rm -rf node_modules
 npm install --production
 git add -f node_modules
 git commit -m node_modules
-git push origin releases/v1
+git push -f origin releases/v1
 
 git push origin :refs/tags/v1
 git tag -fa v1 -m "Update v1 tag"
