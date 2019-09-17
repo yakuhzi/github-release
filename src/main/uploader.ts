@@ -1,11 +1,11 @@
-import { setFailed } from '@actions/core'
 import { GitHub } from '@actions/github'
-import { Asset } from '@/main/asset'
-import { getType } from 'mime'
-import { basename } from 'path'
-import * as fs from 'fs'
-import { lstatSync, readFileSync } from 'fs'
+import { setFailed } from '@actions/core/lib/core'
 import { ReposGetReleaseByTagResponse } from '@octokit/rest'
+import { Asset } from './asset'
+import { basename } from 'path'
+import { getType } from 'mime'
+import { lstatSync, readFileSync } from 'fs'
+import * as fs from 'fs'
 
 export class Uploader {
   github = new GitHub(process.env.GITHUB_TOKEN!)
@@ -24,15 +24,16 @@ export class Uploader {
         await this.uploadAsset(release.upload_url, asset)
       }
 
-      const changelogsPath = process.env.INPUT_CHANGELOGS
+      const changelogPath = process.env.INPUT_CHANGELOG
 
-      if (changelogsPath) {
-        const changelogs = fs.readFileSync(changelogsPath, 'utf8')
-        this.setChangelogs(release, changelogs)
+      if (changelogPath) {
+        const changelog = fs.readFileSync(changelogPath, 'utf8')
+        this.setChangelog(release, changelog)
       }
 
       console.log(`Release uploaded to ${release.html_url}`)
     } catch (error) {
+      console.log(error)
       setFailed(error.message)
     }
   }
@@ -71,14 +72,14 @@ export class Uploader {
     })
   }
 
-  private setChangelogs = async (release: ReposGetReleaseByTagResponse, changelogs: string): Promise<any> => {
+  private setChangelog = async (release: ReposGetReleaseByTagResponse, changelog: string): Promise<any> => {
     const [owner, repo] = process.env.GITHUB_REPOSITORY!.split('/')
 
     return this.github.repos.updateRelease({
       owner,
       repo,
       release_id: release.id,
-      body: changelogs
+      body: changelog
     })
   }
 }

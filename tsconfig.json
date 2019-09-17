@@ -14,10 +14,7 @@
     "baseUrl": "./",
     "forceConsistentCasingInFileNames": true,
     "noImplicitReturns": true,
-    "noUnusedLocals": true,
-    "paths": {
-      "@/*": [ "src/*" ]
-    }
+    "noUnusedLocals": true
   },
   "include": [
     "./typings",

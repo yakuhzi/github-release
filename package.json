@@ -7,9 +7,8 @@
     "build": "npm-run-all clean lint tsc",
     "clean": "rimraf dist/*",
     "lint": "tslint -c tslint.json -p tsconfig.json --fix",
-    "start": "node -r ts-node/register/transpile-only -r tsconfig-paths/register -r dotenv/config .",
+    "start": "node -r dotenv/config .",
     "start:dev": "ts-node --project tsconfig.json --files -r tsconfig-paths/register -r dotenv/config src/main/main.ts",
-    "start:prod": "node -r ts-node/register/transpile-only -r tsconfig-paths/register .",
     "tsc": "tsc"
   },
   "keywords": [],

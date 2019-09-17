@@ -1,4 +1,4 @@
-import { Uploader } from '@/main/uploader'
+import { Uploader } from './uploader'
 
 const uploader = new Uploader()
 uploader.run()
