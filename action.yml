@@ -3,14 +3,11 @@ name: 'Action Release'
 description: 'Github Action for uploading Github Releases Assets'
 author: 'yakuhzi'
 inputs:
-  changelogs:
-    description: 'Path to changelog file'
-    required: false
-  name:
-    description: 'Name of the release'
-    required: false
   file:
     description: 'File to upload to the release'
+    required: true
+  changelogs:
+    description: 'Path to changelog file'
     required: false
 env:
   'GITHUB_TOKEN': 'Github Auth Token'

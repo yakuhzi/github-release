@@ -4,8 +4,8 @@ import { ReposGetReleaseByTagResponse } from '@octokit/rest'
 import { Asset } from './asset'
 import { basename } from 'path'
 import { getType } from 'mime'
-import { lstatSync, readFileSync } from 'fs'
 import * as fs from 'fs'
+import { lstatSync, readFileSync } from 'fs'
 
 export class Uploader {
   github = new GitHub(process.env.GITHUB_TOKEN!)
@@ -20,14 +20,14 @@ export class Uploader {
       const path = process.env.INPUT_FILE
 
       if (path) {
-        const asset = this.getAsset(path)
+        const asset = this.getAsset(this.replaceEnvVariables(path))
         await this.uploadAsset(release.upload_url, asset)
       }
 
       const changelogPath = process.env.INPUT_CHANGELOG
 
       if (changelogPath) {
-        const changelog = fs.readFileSync(changelogPath, 'utf8')
+        const changelog = fs.readFileSync(this.replaceEnvVariables(changelogPath), 'utf8')
         this.setChangelog(release, changelog)
       }
 
@@ -81,5 +81,11 @@ export class Uploader {
       release_id: release.id,
       body: changelog
     })
+  }
+
+  private replaceEnvVariables = (path: string): string => {
+    return path
+      .replace(/$GITHUB_WORKSPACE/g, process.env.GITHUB_WORKSPACE!)
+      .replace(/$HOME/g, process.env.HOME!)
   }
 }
