@@ -1,11 +1,11 @@
 import { GitHub } from '@actions/github'
 import { setFailed } from '@actions/core/lib/core'
-import { ReposGetReleaseByTagResponse } from '@octokit/rest'
 import { Asset } from './asset'
 import { basename } from 'path'
 import { getType } from 'mime'
 import * as fs from 'fs'
 import { lstatSync, readFileSync } from 'fs'
+import { Release } from './release'
 
 export class Uploader {
   github = new GitHub(process.env.GITHUB_TOKEN!)
@@ -16,39 +16,42 @@ export class Uploader {
         throw new Error('A tag is required for GitHub Releases')
       }
 
-      const release = await this.getRelease()
-      const path = process.env.INPUT_FILE
-
-      if (path) {
-        const asset = this.getAsset(this.replaceEnvVariables(path))
-        await this.uploadAsset(release.upload_url, asset)
-      }
-
+      let changelog: string | undefined
       const changelogPath = process.env.INPUT_CHANGELOG
 
       if (changelogPath) {
-        const changelog = fs.readFileSync(this.replaceEnvVariables(changelogPath), 'utf8')
-        this.setChangelog(release, changelog)
+        changelog = fs.readFileSync(this.replaceEnvVariables(changelogPath), 'utf8')
       }
 
-      console.log(`Release uploaded to ${release.html_url}`)
+      const release = await this.createGithubRelease(changelog)
+      const assetPath = process.env.INPUT_FILE
+
+      if (assetPath) {
+        const asset = this.getAsset(this.replaceEnvVariables(assetPath))
+        await this.uploadAsset(release.uploadUrl, asset)
+      }
+
+      console.log(`Release uploaded to ${release.htmlUrl}`)
     } catch (error) {
       console.log(error)
       setFailed(error.message)
     }
   }
 
-  private getRelease = async (): Promise<ReposGetReleaseByTagResponse> => {
+  private createGithubRelease = async (changelog?: string): Promise<Release> => {
     const [owner, repo] = process.env.GITHUB_REPOSITORY!.split('/')
-    const tag = process.env.GITHUB_REF!.replace('refs/tags/', '')
+    const tag = process.env.GITHUB_REF!.split('/')[2]
 
-    const response = await this.github.repos.getReleaseByTag({
+    const response = await this.github.repos.createRelease({
       owner,
       repo,
-      tag
+      tag_name: tag,
+      name: tag,
+      body: changelog,
+      draft: false,
+      prerelease: false,
     })
-
-    return response.data
+    return new Release(response.data.upload_url, response.data.html_url)
   }
 
   private getAsset = (path: string): Asset => {
@@ -72,20 +75,9 @@ export class Uploader {
     })
   }
 
-  private setChangelog = async (release: ReposGetReleaseByTagResponse, changelog: string): Promise<any> => {
-    const [owner, repo] = process.env.GITHUB_REPOSITORY!.split('/')
-
-    return this.github.repos.updateRelease({
-      owner,
-      repo,
-      release_id: release.id,
-      body: changelog
-    })
-  }
-
   private replaceEnvVariables = (path: string): string => {
     return path
-      .replace(/$GITHUB_WORKSPACE/g, process.env.GITHUB_WORKSPACE!)
-      .replace(/$HOME/g, process.env.HOME!)
+      .replace(/\$GITHUB_WORKSPACE/g, process.env.GITHUB_WORKSPACE!)
+      .replace(/\$HOME/g, process.env.HOME!)
   }
 }

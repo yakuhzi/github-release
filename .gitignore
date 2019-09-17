@@ -198,4 +198,6 @@ jspm_packages/
 # DynamoDB Local files
 .dynamodb/
 
+dist/
+
 # End of https://www.gitignore.io/api/node,macos,intellij
