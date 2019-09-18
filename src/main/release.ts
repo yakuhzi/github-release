@@ -1,3 +1,4 @@
-export class Release {
-  constructor(public uploadUrl: string, public htmlUrl: string) {}
+export interface Release {
+  upload_url: string
+  html_url: string
 }

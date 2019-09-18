@@ -1,3 +1,6 @@
-export class Asset {
-  constructor(public name: string, public mime: string, public size: number, public file: Buffer) {}
+export interface Asset {
+  name: string
+  mime: string,
+  size: number
+  file: Buffer
 }

@@ -28,10 +28,10 @@ export class Uploader {
 
       if (assetPath) {
         const asset = this.getAsset(this.replaceEnvVariables(assetPath))
-        await this.uploadAsset(release.uploadUrl, asset)
+        await this.uploadAsset(release.upload_url, asset)
       }
 
-      console.log(`Release uploaded to ${release.htmlUrl}`)
+      console.log(`Release uploaded to ${release.html_url}`)
     } catch (error) {
       console.log(error)
       setFailed(error.message)
@@ -51,16 +51,16 @@ export class Uploader {
       draft: false,
       prerelease: false,
     })
-    return new Release(response.data.upload_url, response.data.html_url)
+    return response.data
   }
 
   private getAsset = (path: string): Asset => {
-    return new Asset(
-      basename(path),
-      getType(path) || 'application/octet-stream',
-      lstatSync(path).size,
-      readFileSync(path)
-    )
+    return {
+      name: basename(path),
+      mime: getType(path) || 'application/octet-stream',
+      size: lstatSync(path).size,
+      file: readFileSync(path)
+    }
   }
 
   private uploadAsset = async (url: string, asset: Asset): Promise<any> => {
