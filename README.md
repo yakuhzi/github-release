@@ -1,4 +1,4 @@
-# Action Releases
+# Action Release
 
 A GitHub Action to upload an asset file and changelog to a GitHub release.
 
