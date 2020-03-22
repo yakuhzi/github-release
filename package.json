@@ -19,21 +19,21 @@
     "url": "https://github.com/yakuhzi/action-release.git"
   },
   "dependencies": {
-    "@actions/core": "^1.1.0",
-    "@actions/github": "^1.1.0",
+    "@actions/core": "^1.2.3",
+    "@actions/github": "^2.1.1",
     "@types/mime": "^2.0.1",
-    "@types/node": "^12.7.5",
+    "@types/node": "^13.9.3",
     "mime": "^2.4.4"
   },
   "devDependencies": {
-    "dotenv": "^8.1.0",
+    "dotenv": "^8.2.0",
     "npm-run-all": "^4.1.5",
-    "rimraf": "^3.0.0",
-    "ts-node": "^8.4.1",
+    "rimraf": "^3.0.2",
+    "ts-node": "^8.8.1",
     "tsconfig-paths": "^3.9.0",
-    "tslint": "^5.20.0",
+    "tslint": "^6.1.0",
     "tslint-config-prettier": "^1.18.0",
     "tslint-eslint-rules": "^5.4.0",
-    "typescript": "^3.6.3"
+    "typescript": "^3.8.3"
   }
 }
