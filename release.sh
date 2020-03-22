@@ -4,7 +4,7 @@
 
 git checkout -b releases/v1
 rm -rf node_modules dist
-npm install --production
+npm install
 npm run tsc
 git add -f node_modules dist
 git commit -m "update node_modules & dist"
