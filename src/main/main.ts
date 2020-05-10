@@ -51,6 +51,7 @@ async function createGithubRelease(changelog?: string): Promise<Release> {
     draft: false,
     prerelease: false,
   })
+
   return response.data
 }
 
