@@ -72,7 +72,7 @@ async function uploadAsset(url: string, asset: Asset): Promise<any> {
       'content-type': asset.mime
     },
     name: asset.name,
-    file: asset.file
+    data: asset.file
   })
 }
 
