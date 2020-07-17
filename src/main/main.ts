@@ -1,18 +1,18 @@
-import { GitHub } from '@actions/github'
 import { setFailed } from '@actions/core/lib/core'
-import { Asset } from './asset'
-import { basename } from 'path'
-import { getType } from 'mime'
+import * as github from '@actions/github'
 import * as fs from 'fs'
 import { lstatSync, readFileSync } from 'fs'
+import { getType } from 'mime'
+import { basename } from 'path'
+import { Asset } from './asset'
 import { Release } from './release'
 
-const github = new GitHub(process.env.GITHUB_TOKEN!)
+const octokit = github.getOctokit(process.env.GITHUB_TOKEN!)
 run()
 
 async function run(): Promise<void> {
   try {
-    if (!process.env.GITHUB_REF!.startsWith('refs/tags/')) {
+    if (!process.env.GITHUB_REF?.startsWith('refs/tags/')) {
       throw new Error('A tag is required for GitHub Releases')
     }
 
@@ -28,12 +28,11 @@ async function run(): Promise<void> {
 
     if (assetPath) {
       const asset = getAsset(replaceEnvVariables(assetPath))
-      await uploadAsset(release.upload_url, asset)
+      await uploadAsset(release, asset)
     }
 
     console.log(`Release uploaded to ${release.html_url}`)
   } catch (error) {
-    console.log(error)
     setFailed(error.message)
   }
 }
@@ -42,7 +41,7 @@ async function createGithubRelease(changelog?: string): Promise<Release> {
   const [owner, repo] = process.env.GITHUB_REPOSITORY!.split('/')
   const tag = process.env.GITHUB_REF!.split('/')[2]
 
-  const response = await github.repos.createRelease({
+  const response = await octokit.repos.createRelease({
     owner,
     repo,
     tag_name: tag,
@@ -60,19 +59,24 @@ function getAsset(path: string): Asset {
     name: basename(path),
     mime: getType(path) || 'application/octet-stream',
     size: lstatSync(path).size,
-    file: readFileSync(path)
+    file: readFileSync(path),
   }
 }
 
-async function uploadAsset(url: string, asset: Asset): Promise<any> {
-  return github.repos.uploadReleaseAsset({
-    url,
+async function uploadAsset(release: Release, asset: Asset): Promise<any> {
+  const [owner, repo] = process.env.GITHUB_REPOSITORY!.split('/')
+
+  return octokit.repos.uploadReleaseAsset({
+    owner,
+    repo,
+    url: release.upload_url,
+    release_id: release.id,
     headers: {
       'content-length': asset.size,
-      'content-type': asset.mime
+      'content-type': asset.mime,
     },
     name: asset.name,
-    data: asset.file
+    data: asset.file as unknown as string,
   })
 }
 

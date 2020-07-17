@@ -1,6 +1,6 @@
 {
   "name": "action-release",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "",
   "main": "dist/main.js",
   "scripts": {
@@ -16,19 +16,19 @@
     "url": "https://github.com/yakuhzi/action-release.git"
   },
   "dependencies": {
-    "@actions/core": "^1.2.3",
-    "@actions/github": "^2.1.1",
-    "mime": "^2.4.4"
+    "@actions/core": "^1.2.4",
+    "@actions/github": "^4.0.0",
+    "mime": "^2.4.6"
   },
   "devDependencies": {
-    "@types/mime": "^2.0.1",
-    "@types/node": "^13.9.3",
-    "@typescript-eslint/eslint-plugin": "^2.24.0",
-    "@typescript-eslint/parser": "^2.24.0",
+    "@types/mime": "^2.0.2",
+    "@types/node": "^14.0.23",
+    "@typescript-eslint/eslint-plugin": "^3.6.1",
+    "@typescript-eslint/parser": "^3.6.1",
     "dotenv": "^8.2.0",
-    "eslint": "^6.8.0",
-    "ts-node": "^8.8.1",
+    "eslint": "^7.4.0",
+    "ts-node": "^8.10.2",
     "tsconfig-paths": "^3.9.0",
-    "typescript": "^3.8.3"
+    "typescript": "^3.9.7"
   }
 }
