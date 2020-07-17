@@ -12,7 +12,7 @@ run()
 
 async function run(): Promise<void> {
   try {
-    if (!process.env.GITHUB_REF!.startsWith('refs/tags/')) {
+    if (!process.env.GITHUB_REF?.startsWith('refs/tags/')) {
       throw new Error('A tag is required for GitHub Releases')
     }
 

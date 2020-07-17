@@ -1,9 +1,14 @@
-# Action Release
+# Release Asset
 
-A GitHub Action to upload an asset file and changelog to a GitHub release.
+A GitHub Action that creates a GitHub release with a changelog and uploads an asset file to it.
 
-Usage
--------
+## Deprecated
+This action is deprecated, as there are now "official" alternatives to this action:  
+
+https://github.com/actions/create-release  
+https://github.com/actions/upload-release-asset
+
+## Usage
 Here is an example how to use this action:
 
 ```yaml  
