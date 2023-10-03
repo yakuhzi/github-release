@@ -59,9 +59,15 @@ async function generateReleaseNotes(): Promise<string> {
   const execAsync = util.promisify(exec)
 
   // Get old and new version tag or commit
-  const { stdout: tags } = await execAsync('git tag --sort=-v:refname | head -n 2')
+  const { stdout: tags } = await execAsync(
+    'git for-each-ref --sort=-authordate --format \'%(refname:short)\' --count 2 refs/tags'
+  )
   const { stdout: initialCommit } = await execAsync('git rev-list --max-parents=0 HEAD')
   const [newVersion, oldVersion = initialCommit.trim()] = tags.trim().split('\n')
+
+  if (newVersion !== process.env.GITHUB_REF!.split('/')[2]) {
+    throw new Error('⚠️ Latest tag does not match with current tag')
+  }
 
   // Get commit messages until old version
   const { stdout: commitMessages } = await execAsync(

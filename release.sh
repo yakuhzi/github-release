@@ -11,7 +11,7 @@ git commit -m "Chore: Update node_modules & dist"
 git push -f origin releases/v2
 
 git push origin :refs/tags/v2
-git tag -fa v2 -m "Chore: Update v2 tag"
+git tag -f v2
 git push origin v2
 git checkout main
 git branch -D releases/v2
