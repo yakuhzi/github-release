@@ -7,12 +7,12 @@ rm -rf node_modules dist
 npm install
 npm run build
 git add -f node_modules dist
-git commit -m "Update node_modules & dist"
+git commit -m "Chore: Update node_modules & dist"
 git push -f origin releases/v2
 
-git push origin :refs/tags/v1
-git tag -fa v2 -m "Update v2 tag"
+git push origin :refs/tags/v2
+git tag -fa v2 -m "Chore: Update v2 tag"
 git push origin v2
-git checkout master
+git checkout main
 git branch -D releases/v2
 npm install

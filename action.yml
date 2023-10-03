@@ -1,18 +1,15 @@
 # https://help.github.com/en/articles/metadata-syntax-for-github-actions
-name: 'GitHub Release Action'
-description: 'Creates a Github Releases with automatically generated release notes including assets'
+name: 'Action GitHub Release'
+description: 'Creates a Github Releases with file upload and automatically generated release notes.'
 author: 'yakuhzi'
 inputs:
   file:
     description: 'File to upload to the release'
-    required: true
-  changelog:
-    description: 'Path to changelog file'
     required: false
 env:
   'GITHUB_TOKEN': 'Github Auth Token'
 runs:
-  using: 'node18'
+  using: 'node16'
   main: 'dist/main.js'
 branding:
   color: 'green'

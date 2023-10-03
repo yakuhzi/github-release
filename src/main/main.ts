@@ -1,11 +1,12 @@
 import { setFailed } from '@actions/core/lib/core'
 import * as github from '@actions/github'
-import * as fs from 'fs'
+import { Release } from './release'
+import { Asset } from './asset'
 import { lstatSync, readFileSync } from 'fs'
 import { getType } from 'mime'
 import { basename } from 'path'
-import { Asset } from './asset'
-import { Release } from './release'
+import * as util from 'util'
+import { exec } from 'child_process'
 
 const octokit = github.getOctokit(process.env.GITHUB_TOKEN!)
 run()
@@ -13,45 +14,96 @@ run()
 async function run(): Promise<void> {
   try {
     if (!process.env.GITHUB_REF?.startsWith('refs/tags/')) {
-      throw new Error('A tag is required for GitHub Releases')
+      throw new Error('⚠️ GitHub Releases requires a tag')
     }
 
-    let changelog: string | undefined
-    const changelogPath = process.env.INPUT_CHANGELOG
+    const release = await createGithubRelease()
+    const filePath = process.env.INPUT_FILE
 
-    if (changelogPath) {
-      changelog = fs.readFileSync(replaceEnvVariables(changelogPath), 'utf8')
-    }
-
-    const release = await createGithubRelease(changelog)
-    const assetPath = process.env.INPUT_FILE
-
-    if (assetPath) {
-      const asset = getAsset(replaceEnvVariables(assetPath))
+    if (filePath) {
+      const asset = getAsset(replaceEnvVariables(filePath))
+      console.log(`⬆️ Uploading asset '${asset.name}'`)
       await uploadAsset(release, asset)
     }
 
-    console.log(`Release uploaded to ${release.html_url}`)
+    console.log(`🚀 Release ready at ${release.html_url}`)
   } catch (error) {
-    setFailed(error.message)
+    if (error instanceof Error) {
+      setFailed(error.message)
+    } else {
+      setFailed(`⚠️ Unexpected error: '${error}'`)
+    }
   }
 }
 
-async function createGithubRelease(changelog?: string): Promise<Release> {
+async function createGithubRelease(): Promise<Release> {
   const [owner, repo] = process.env.GITHUB_REPOSITORY!.split('/')
   const tag = process.env.GITHUB_REF!.split('/')[2]
+  const releaseNotes = await generateReleaseNotes()
+  console.log(`👨‍🏭 Creating new GitHub release for tag '${tag}'`)
 
-  const response = await octokit.repos.createRelease({
+  const response = await octokit.rest.repos.createRelease({
     owner,
     repo,
     tag_name: tag,
     name: tag,
-    body: changelog,
+    body: releaseNotes,
     draft: false,
     prerelease: false,
   })
 
   return response.data
+}
+
+async function generateReleaseNotes(): Promise<string> {
+  const execAsync = util.promisify(exec)
+
+  // Get old and new version tag or commit
+  const { stdout: tags } = await execAsync('git tag --sort=-v:refname | head -n 2')
+  const { stdout: initialCommit } = await execAsync('git rev-list --max-parents=0 HEAD')
+  const [newVersion, oldVersion = initialCommit.trim()] = tags.trim().split('\n')
+
+  // Get commit messages until old version
+  const { stdout: commitMessages } = await execAsync(
+    `git --no-pager log ${oldVersion}...${newVersion} --pretty=format:%s`
+  )
+
+  // Group commits by their semantic prefix
+  const groupedCommits = commitMessages
+    .split('\n')
+    .reverse()
+    .reduce((acc: { [key: string]: string[] }, commit: string) => {
+      let [prefix, message]: string[] = commit.split(':').map(str => str.trim())
+
+      if (!message) {
+        message = prefix
+        prefix = 'Miscellaneous'
+      }
+
+      acc[prefix] = [...(acc[prefix] || []), `- ${message}`]
+      return acc
+    }, {})
+
+  // Define order and replacement of semantic prefixes
+  const commitPrefixMapping: { [key: string]: string } = {
+    'Feat': 'Features',
+    'Fix': 'Fixes',
+    'Docs': 'Documentation',
+    'Test': 'Tests',
+    'Refactor': 'Refactoring',
+    'Style': 'Style',
+    'Chore': 'Chore',
+    'Miscellaneous': 'Miscellaneous'
+  }
+
+  // Sort groups, map to strings and join to final output
+  return Object.entries(groupedCommits)
+    .sort(([prefixA], [prefixB]) => {
+      const semanticPrefixes = Object.keys(commitPrefixMapping)
+      return semanticPrefixes.indexOf(prefixA) - semanticPrefixes.indexOf(prefixB)
+    })
+    .map(([prefix, commits]) => `**${commitPrefixMapping[prefix]}:**\n${commits.join('\n')}`)
+    .join('\n\n')
 }
 
 function getAsset(path: string): Asset {
@@ -63,10 +115,10 @@ function getAsset(path: string): Asset {
   }
 }
 
-async function uploadAsset(release: Release, asset: Asset): Promise<any> {
+async function uploadAsset(release: Release, asset: Asset): Promise<void> {
   const [owner, repo] = process.env.GITHUB_REPOSITORY!.split('/')
 
-  return octokit.repos.uploadReleaseAsset({
+  await octokit.rest.repos.uploadReleaseAsset({
     owner,
     repo,
     url: release.upload_url,
