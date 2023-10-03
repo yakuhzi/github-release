@@ -72,6 +72,7 @@ async function generateReleaseNotes(): Promise<string> {
   const groupedCommits = commitMessages
     .split('\n')
     .reverse()
+    .filter(commit => !commit.startsWith('Chore: Release'))
     .reduce((acc: { [key: string]: string[] }, commit: string) => {
       let [prefix, message]: string[] = commit.split(':').map(str => str.trim())
 
