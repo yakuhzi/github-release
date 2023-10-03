@@ -16,7 +16,7 @@
     "url": "https://github.com/yakuhzi/action-release.git"
   },
   "dependencies": {
-    "@actions/core": "^1.2.4",
+    "@actions/core": "^1.9.1",
     "@actions/github": "^4.0.0",
     "mime": "^2.4.6"
   },
