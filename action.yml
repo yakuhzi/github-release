@@ -1,6 +1,6 @@
 # https://help.github.com/en/articles/metadata-syntax-for-github-actions
-name: 'Action Release'
-description: 'Github Action for uploading Github Releases Assets'
+name: 'GitHub Release Action'
+description: 'Creates a Github Releases with automatically generated release notes including assets'
 author: 'yakuhzi'
 inputs:
   file:
@@ -12,7 +12,7 @@ inputs:
 env:
   'GITHUB_TOKEN': 'Github Auth Token'
 runs:
-  using: 'node12'
+  using: 'node18'
   main: 'dist/main.js'
 branding:
   color: 'green'
