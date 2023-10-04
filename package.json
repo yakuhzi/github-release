@@ -1,7 +1,7 @@
 {
-  "name": "action-release",
-  "version": "1.2.3",
-  "description": "",
+  "name": "github-release",
+  "version": "2.1.1",
+  "description": "A GitHub Action that creates a Github release with file upload and automatically generated release notes.",
   "main": "dist/main.js",
   "scripts": {
     "build": "tsc",
