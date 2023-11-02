@@ -19,9 +19,10 @@ async function run(): Promise<void> {
 
     const release = await createGithubRelease()
     const filePath = process.env.INPUT_FILE
+    const assetName = process.env.INPUT_ASSET_NAME
 
     if (filePath) {
-      const asset = getAsset(replaceEnvVariables(filePath))
+      const asset = getAsset(replaceEnvVariables(filePath), assetName)
       console.log(`⬆️ Uploading asset '${asset.name}'`)
       await uploadAsset(release, asset)
     }
@@ -113,9 +114,9 @@ async function generateReleaseNotes(): Promise<string> {
     .join('\n\n')
 }
 
-function getAsset(path: string): Asset {
+function getAsset(path: string, name?: string): Asset {
   return {
-    name: basename(path),
+    name: name ?? basename(path),
     mime: getType(path) || 'application/octet-stream',
     size: lstatSync(path).size,
     file: readFileSync(path),
