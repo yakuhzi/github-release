@@ -16,3 +16,12 @@ Here is an example how to use this action:
   env:
     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
+
+Make sure to fetch the whole repository history, otherwise release notes can't be generated properly:
+
+```yaml  
+- name: Checkout
+  uses: actions/checkout@main
+  with:
+    fetch-depth: 0
+```
