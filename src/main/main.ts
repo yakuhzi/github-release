@@ -71,15 +71,18 @@ async function generateReleaseNotes(): Promise<string> {
   }
 
   // Get commit messages until old version
-  const { stdout: commitMessages } = await execAsync(
+  const { stdout: commitMessagesString } = await execAsync(
     `git --no-pager log ${oldVersion}...${newVersion} --pretty=format:%s`
   )
+  let commitMessages = commitMessagesString.split('\n').reverse()
+
+  // Filter duplicate and release commit messages
+  commitMessages = commitMessages
+    .filter((commitMessage, index) => commitMessages.indexOf(commitMessage) == index)
+    .filter(commitMessage => !commitMessage.startsWith('Chore: Release'))
 
   // Group commits by their semantic prefix
   const groupedCommits = commitMessages
-    .split('\n')
-    .reverse()
-    .filter(commit => !commit.startsWith('Chore: Release'))
     .reduce((acc: { [key: string]: string[] }, commit: string) => {
       let [prefix, message]: string[] = commit.split(':').map(str => str.trim())
 
@@ -101,7 +104,7 @@ async function generateReleaseNotes(): Promise<string> {
     'Refactor': 'Refactoring',
     'Style': 'Style',
     'Chore': 'Chore',
-    'Miscellaneous': 'Miscellaneous'
+    'Misc': 'Miscellaneous'
   }
 
   // Sort groups, map to strings and join to final output
