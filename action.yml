@@ -6,6 +6,9 @@ inputs:
   file:
     description: 'File to upload to the release'
     required: false
+  asset_name:
+    description: 'Name of the uplaoded asset'
+    required: false
 runs:
   using: 'node16'
   main: 'dist/main.js'
