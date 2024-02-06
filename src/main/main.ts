@@ -118,8 +118,12 @@ async function generateReleaseNotes(): Promise<string> {
 }
 
 function getAsset(path: string, name?: string): Asset {
+  if (!name || name.length == 0) {
+    name = basename(path)
+  }
+
   return {
-    name: name ?? basename(path),
+    name,
     mime: getType(path) || 'application/octet-stream',
     size: lstatSync(path).size,
     file: readFileSync(path),
