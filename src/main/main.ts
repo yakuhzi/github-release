@@ -81,20 +81,6 @@ async function generateReleaseNotes(): Promise<string> {
     .filter((commitMessage, index) => commitMessages.indexOf(commitMessage) == index)
     .filter(commitMessage => !commitMessage.startsWith('Chore: Release'))
 
-  // Group commits by their semantic prefix
-  const groupedCommits = commitMessages
-    .reduce((acc: { [key: string]: string[] }, commit: string) => {
-      let [prefix, message]: string[] = commit.split(':').map(str => str.trim())
-
-      if (!message) {
-        message = prefix
-        prefix = 'Miscellaneous'
-      }
-
-      acc[prefix] = [...(acc[prefix] || []), `- ${message}`]
-      return acc
-    }, {})
-
   // Define order and replacement of semantic prefixes
   const commitPrefixMapping: { [key: string]: string } = {
     'Feat': 'Features',
@@ -106,6 +92,24 @@ async function generateReleaseNotes(): Promise<string> {
     'Chore': 'Chore',
     'Misc': 'Miscellaneous'
   }
+
+  // Group commits by their semantic prefix
+  const groupedCommits = commitMessages
+    .reduce((acc: { [key: string]: string[] }, commit: string) => {
+      let [prefix, message]: string[] = commit.split(':').map(str => str.trim())
+
+      if (!message) {
+        message = prefix
+        prefix = 'Miscellaneous'
+      }
+
+      if (!commitPrefixMapping[prefix]) {
+        prefix = 'Misc'
+      }
+
+      acc[prefix] = [...(acc[prefix] || []), `- ${message}`]
+      return acc
+    }, {})
 
   // Sort groups, map to strings and join to final output
   return Object.entries(groupedCommits)
