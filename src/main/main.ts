@@ -2,11 +2,11 @@ import { setFailed } from '@actions/core/lib/core'
 import * as github from '@actions/github'
 import { Release } from './release'
 import { Asset } from './asset'
-import { lstatSync, readFileSync } from 'fs'
-import { getType } from 'mime'
+import fs, { lstatSync, readFileSync } from 'fs'
 import { basename } from 'path'
 import * as util from 'util'
 import { exec } from 'child_process'
+import mime from 'mime'
 
 const octokit = github.getOctokit(process.env.GITHUB_TOKEN!)
 run()
@@ -128,7 +128,7 @@ function getAsset(path: string, name?: string): Asset {
 
   return {
     name,
-    mime: getType(path) || 'application/octet-stream',
+    mime: mime.getType(path) || 'application/octet-stream',
     size: lstatSync(path).size,
     file: readFileSync(path),
   }
