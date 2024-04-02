@@ -6,8 +6,23 @@ inputs:
   file:
     description: 'File to upload to the release'
     required: false
-  asset_name:
-    description: 'Name of the uplaoded asset'
+  asset-name:
+    description: 'Name of the asset to upload'
+    required: false
+  bot-token:
+    description: 'Telegram bot token'
+    required: false
+  chat-id:
+    description: 'Id of the chat to send the asset to'
+    required: false
+  firebase-server-key:
+    description: 'Firebase server key'
+    required: false
+  firebase-topic:
+    description: 'Topic channel of the Firebase message'
+    required: false
+  app-name:
+    description: 'Name of the released app'
     required: false
 runs:
   using: 'node16'

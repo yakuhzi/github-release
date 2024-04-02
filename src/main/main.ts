@@ -6,7 +6,8 @@ import fs, { lstatSync, readFileSync } from 'fs'
 import { basename } from 'path'
 import * as util from 'util'
 import { exec } from 'child_process'
-import mime from 'mime'
+import axios from 'axios'
+import { getType } from 'mime'
 
 const octokit = github.getOctokit(process.env.GITHUB_TOKEN!)
 run()
@@ -18,14 +19,9 @@ async function run(): Promise<void> {
     }
 
     const release = await createGithubRelease()
-    const filePath = process.env.INPUT_FILE
-    const assetName = process.env.INPUT_ASSET_NAME
-
-    if (filePath) {
-      const asset = getAsset(replaceEnvVariables(filePath), assetName)
-      console.log(`⬆️ Uploading asset '${asset.name}'`)
-      await uploadAsset(release, asset)
-    }
+    await uploadAsset(release)
+    await sendAssetOverTelegram()
+    await sendFirebaseMessage()
 
     console.log(`🚀 Release ready at ${release.html_url}`)
   } catch (error) {
@@ -56,12 +52,83 @@ async function createGithubRelease(): Promise<Release> {
   return response.data
 }
 
+async function uploadAsset(release: Release): Promise<void> {
+  const filePath = process.env.INPUT_FILE
+  const assetName = process.env.INPUT_ASSET_NAME
+
+  if (!filePath || !assetName) {
+    return
+  }
+
+  const asset = getAsset(filePath, assetName)
+  const [owner, repo] = process.env.GITHUB_REPOSITORY!.split('/')
+
+  console.log(`⬆️ Uploading asset '${asset.name}'`)
+  await octokit.rest.repos.uploadReleaseAsset({
+    owner,
+    repo,
+    url: release.upload_url,
+    release_id: release.id,
+    headers: {
+      'content-length': asset.size,
+      'content-type': asset.mime,
+    },
+    name: asset.name,
+    data: asset.file as unknown as string,
+  })
+}
+
+async function sendAssetOverTelegram(): Promise<void> {
+  const filePath = process.env.INPUT_FILE
+  const assetName = process.env.INPUT_ASSET_NAME
+  const botToken = process.env.INPUT_BOT_TOKEN
+  const chatId = process.env.INPUT_CHAT_ID
+
+  if (!filePath || !botToken || !chatId) {
+    return
+  }
+
+  console.log(`📧️ Sending asset to Telegram chat '${chatId}'`)
+
+  const form = new FormData()
+  const buffer = fs.readFileSync(filePath)
+  form.append('chat_id', chatId)
+  form.append('document', new Blob([buffer]), assetName ?? filePath.split('/').pop())
+
+  await axios.post(`https://api.telegram.org/bot${botToken}/sendDocument`, form)
+}
+
+async function sendFirebaseMessage(): Promise<void> {
+  const firebaseServerKey = process.env.INPUT_FIREBASE_SERVER_KEY
+  const firebaseTopic = process.env.INPUT_FIREBASE_TOPIC
+  const appName = process.env.INPUT_APP_NAME
+  const tag = process.env.GITHUB_REF!.split('/')[2]
+
+  if (!firebaseServerKey || !firebaseTopic || !appName || !tag) {
+    return
+  }
+
+  console.log(`🔔 Sending Firebase message to topic '${firebaseTopic}'`)
+  await axios.post('https://fcm.googleapis.com/fcm/send', {
+    to: `/topics/${firebaseTopic}`,
+    data: {
+      name: appName,
+      version: tag.replace('v', ''),
+    },
+  }, {
+    headers: {
+      'Authorization': `key=${firebaseServerKey}`,
+      'Content-Type': 'application/json',
+    },
+  })
+}
+
 async function generateReleaseNotes(): Promise<string> {
   const execAsync = util.promisify(exec)
 
   // Get old and new version tag or commit
   const { stdout: tags } = await execAsync(
-    'git for-each-ref --sort=-authordate --format \'%(refname:short)\' --count 2 refs/tags'
+    'git for-each-ref --sort=-authordate --format \'%(refname:short)\' --count 2 refs/tags',
   )
   const { stdout: initialCommit } = await execAsync('git rev-list --max-parents=0 HEAD')
   const [newVersion, oldVersion = initialCommit.trim()] = tags.trim().split('\n')
@@ -72,7 +139,7 @@ async function generateReleaseNotes(): Promise<string> {
 
   // Get commit messages until old version
   const { stdout: commitMessagesString } = await execAsync(
-    `git --no-pager log ${oldVersion}...${newVersion} --pretty=format:%s`
+    `git --no-pager log ${oldVersion}...${newVersion} --pretty=format:%s`,
   )
   let commitMessages = commitMessagesString.split('\n').reverse()
 
@@ -90,7 +157,7 @@ async function generateReleaseNotes(): Promise<string> {
     'Refactor': 'Refactoring',
     'Style': 'Style',
     'Chore': 'Chore',
-    'Misc': 'Miscellaneous'
+    'Misc': 'Miscellaneous',
   }
 
   // Group commits by their semantic prefix
@@ -128,31 +195,8 @@ function getAsset(path: string, name?: string): Asset {
 
   return {
     name,
-    mime: mime.getType(path) || 'application/octet-stream',
+    mime: getType(path) || 'application/octet-stream',
     size: lstatSync(path).size,
     file: readFileSync(path),
   }
-}
-
-async function uploadAsset(release: Release, asset: Asset): Promise<void> {
-  const [owner, repo] = process.env.GITHUB_REPOSITORY!.split('/')
-
-  await octokit.rest.repos.uploadReleaseAsset({
-    owner,
-    repo,
-    url: release.upload_url,
-    release_id: release.id,
-    headers: {
-      'content-length': asset.size,
-      'content-type': asset.mime,
-    },
-    name: asset.name,
-    data: asset.file as unknown as string,
-  })
-}
-
-function replaceEnvVariables(path: string): string {
-  return path
-    .replace(/\$GITHUB_WORKSPACE/g, process.env.GITHUB_WORKSPACE!)
-    .replace(/\$HOME/g, process.env.HOME!)
 }
