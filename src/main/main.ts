@@ -1,5 +1,6 @@
 import { setFailed } from '@actions/core/lib/core'
 import * as github from '@actions/github'
+import * as core from '@actions/core'
 import { Release } from './release'
 import { Asset } from './asset'
 import fs, { lstatSync, readFileSync } from 'fs'
@@ -53,8 +54,8 @@ async function createGithubRelease(): Promise<Release> {
 }
 
 async function uploadAsset(release: Release): Promise<void> {
-  const filePath = process.env.INPUT_FILE
-  const assetName = process.env.INPUT_ASSET_NAME
+  const filePath = core.getInput('file') ?? process.env.INPUT_FILE
+  const assetName = core.getInput('asset-name') ?? process.env.INPUT_ASSET_NAME
 
   if (!filePath || !assetName) {
     return
@@ -79,10 +80,10 @@ async function uploadAsset(release: Release): Promise<void> {
 }
 
 async function sendAssetOverTelegram(): Promise<void> {
-  const filePath = process.env.INPUT_FILE
-  const assetName = process.env.INPUT_ASSET_NAME
-  const botToken = process.env.INPUT_BOT_TOKEN
-  const chatId = process.env.INPUT_CHAT_ID
+  const filePath = core.getInput('file') ?? process.env.INPUT_FILE
+  const assetName = core.getInput('asset-name') ?? process.env.INPUT_ASSET_NAME
+  const botToken = core.getInput('bot-token') ?? process.env.INPUT_BOT_TOKEN
+  const chatId = core.getInput('chat-id') ?? process.env.INPUT_CHAT_ID
 
   if (!filePath || !botToken || !chatId) {
     return
@@ -99,9 +100,9 @@ async function sendAssetOverTelegram(): Promise<void> {
 }
 
 async function sendFirebaseMessage(): Promise<void> {
-  const firebaseServerKey = process.env.INPUT_FIREBASE_SERVER_KEY
-  const firebaseTopic = process.env.INPUT_FIREBASE_TOPIC
-  const appName = process.env.INPUT_APP_NAME
+  const firebaseServerKey = core.getInput('firebase-server-key') ?? process.env.INPUT_FIREBASE_SERVER_KEY
+  const firebaseTopic = core.getInput('firebase-server-topic') ?? process.env.INPUT_FIREBASE_TOPIC
+  const appName = core.getInput('app-name') ?? process.env.INPUT_APP_NAME
   const tag = process.env.GITHUB_REF!.split('/')[2]
 
   if (!firebaseServerKey || !firebaseTopic || !appName || !tag) {
