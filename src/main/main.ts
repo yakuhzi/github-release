@@ -101,7 +101,7 @@ async function sendAssetOverTelegram(): Promise<void> {
 
 async function sendFirebaseMessage(): Promise<void> {
   const firebaseServerKey = core.getInput('firebase-server-key') ?? process.env.INPUT_FIREBASE_SERVER_KEY
-  const firebaseTopic = core.getInput('firebase-server-topic') ?? process.env.INPUT_FIREBASE_TOPIC
+  const firebaseTopic = core.getInput('firebase-topic') ?? process.env.INPUT_FIREBASE_TOPIC
   const appName = core.getInput('app-name') ?? process.env.INPUT_APP_NAME
   const tag = process.env.GITHUB_REF!.split('/')[2]
 
