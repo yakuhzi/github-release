@@ -1,0 +1,221 @@
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const core_1 = require("@actions/core/lib/core");
+const github = __importStar(require("@actions/github"));
+const core = __importStar(require("@actions/core"));
+const fs_1 = __importStar(require("fs"));
+const path_1 = require("path");
+const util = __importStar(require("util"));
+const child_process_1 = require("child_process");
+const axios_1 = __importDefault(require("axios"));
+const mime_1 = require("mime");
+const octokit = github.getOctokit(process.env.GITHUB_TOKEN);
+run();
+function run() {
+    return __awaiter(this, void 0, void 0, function* () {
+        var _a;
+        try {
+            if (!((_a = process.env.GITHUB_REF) === null || _a === void 0 ? void 0 : _a.startsWith('refs/tags/'))) {
+                throw new Error('⚠️ GitHub Releases requires a tag');
+            }
+            const release = yield createGithubRelease();
+            yield uploadAsset(release);
+            yield sendAssetOverTelegram();
+            yield sendFirebaseMessage();
+            console.log(`🚀 Release ready at ${release.html_url}`);
+        }
+        catch (error) {
+            if (error instanceof Error) {
+                (0, core_1.setFailed)(error.message);
+            }
+            else {
+                (0, core_1.setFailed)(`⚠️ Unexpected error: '${error}'`);
+            }
+        }
+    });
+}
+function createGithubRelease() {
+    return __awaiter(this, void 0, void 0, function* () {
+        const [owner, repo] = process.env.GITHUB_REPOSITORY.split('/');
+        const tag = process.env.GITHUB_REF.split('/')[2];
+        const releaseNotes = yield generateReleaseNotes();
+        console.log(`👨‍🏭 Creating new GitHub release for tag '${tag}'`);
+        const response = yield octokit.rest.repos.createRelease({
+            owner,
+            repo,
+            tag_name: tag,
+            name: tag,
+            body: releaseNotes,
+            draft: false,
+            prerelease: false,
+        });
+        return response.data;
+    });
+}
+function uploadAsset(release) {
+    return __awaiter(this, void 0, void 0, function* () {
+        var _a, _b;
+        const filePath = (_a = core.getInput('file')) !== null && _a !== void 0 ? _a : process.env.INPUT_FILE;
+        const assetName = (_b = core.getInput('asset-name')) !== null && _b !== void 0 ? _b : process.env.INPUT_ASSET_NAME;
+        if (!filePath || !assetName) {
+            return;
+        }
+        const asset = getAsset(filePath, assetName);
+        const [owner, repo] = process.env.GITHUB_REPOSITORY.split('/');
+        console.log(`⬆️ Uploading asset '${asset.name}'`);
+        yield octokit.rest.repos.uploadReleaseAsset({
+            owner,
+            repo,
+            url: release.upload_url,
+            release_id: release.id,
+            headers: {
+                'content-length': asset.size,
+                'content-type': asset.mime,
+            },
+            name: asset.name,
+            data: asset.file,
+        });
+    });
+}
+function sendAssetOverTelegram() {
+    return __awaiter(this, void 0, void 0, function* () {
+        var _a, _b, _c, _d;
+        const filePath = (_a = core.getInput('file')) !== null && _a !== void 0 ? _a : process.env.INPUT_FILE;
+        const assetName = (_b = core.getInput('asset-name')) !== null && _b !== void 0 ? _b : process.env.INPUT_ASSET_NAME;
+        const botToken = (_c = core.getInput('bot-token')) !== null && _c !== void 0 ? _c : process.env.INPUT_BOT_TOKEN;
+        const chatId = (_d = core.getInput('chat-id')) !== null && _d !== void 0 ? _d : process.env.INPUT_CHAT_ID;
+        if (!filePath || !botToken || !chatId) {
+            return;
+        }
+        console.log(`📧️ Sending asset to Telegram chat '${chatId}'`);
+        const form = new FormData();
+        const buffer = fs_1.default.readFileSync(filePath);
+        form.append('chat_id', chatId);
+        form.append('document', new Blob([buffer]), assetName !== null && assetName !== void 0 ? assetName : filePath.split('/').pop());
+        yield axios_1.default.post(`https://api.telegram.org/bot${botToken}/sendDocument`, form);
+    });
+}
+function sendFirebaseMessage() {
+    return __awaiter(this, void 0, void 0, function* () {
+        var _a, _b, _c;
+        const firebaseServerKey = (_a = core.getInput('firebase-server-key')) !== null && _a !== void 0 ? _a : process.env.INPUT_FIREBASE_SERVER_KEY;
+        const firebaseTopic = (_b = core.getInput('firebase-topic')) !== null && _b !== void 0 ? _b : process.env.INPUT_FIREBASE_TOPIC;
+        const appName = (_c = core.getInput('app-name')) !== null && _c !== void 0 ? _c : process.env.INPUT_APP_NAME;
+        const tag = process.env.GITHUB_REF.split('/')[2];
+        if (!firebaseServerKey || !firebaseTopic || !appName || !tag) {
+            return;
+        }
+        console.log(`🔔 Sending Firebase message to topic '${firebaseTopic}'`);
+        yield axios_1.default.post('https://fcm.googleapis.com/fcm/send', {
+            to: `/topics/${firebaseTopic}`,
+            data: {
+                name: appName,
+                version: tag.replace('v', ''),
+            },
+        }, {
+            headers: {
+                'Authorization': `key=${firebaseServerKey}`,
+                'Content-Type': 'application/json',
+            },
+        });
+    });
+}
+function generateReleaseNotes() {
+    return __awaiter(this, void 0, void 0, function* () {
+        const execAsync = util.promisify(child_process_1.exec);
+        // Get old and new version tag or commit
+        const { stdout: tags } = yield execAsync('git for-each-ref --sort=-authordate --format \'%(refname:short)\' --count 2 refs/tags');
+        const { stdout: initialCommit } = yield execAsync('git rev-list --max-parents=0 HEAD');
+        const [newVersion, oldVersion = initialCommit.trim()] = tags.trim().split('\n');
+        if (newVersion !== process.env.GITHUB_REF.split('/')[2]) {
+            throw new Error('⚠️ Latest tag does not match with current tag');
+        }
+        // Get commit messages until old version
+        const { stdout: commitMessagesString } = yield execAsync(`git --no-pager log ${oldVersion}...${newVersion} --pretty=format:%s`);
+        let commitMessages = commitMessagesString.split('\n').reverse();
+        // Filter duplicate and release commit messages
+        commitMessages = commitMessages
+            .filter((commitMessage, index) => commitMessages.indexOf(commitMessage) == index)
+            .filter(commitMessage => !commitMessage.startsWith('Chore: Release'));
+        // Define order and replacement of semantic prefixes
+        const commitPrefixMapping = {
+            'Feat': 'Features',
+            'Fix': 'Fixes',
+            'Docs': 'Documentation',
+            'Test': 'Tests',
+            'Refactor': 'Refactoring',
+            'Style': 'Style',
+            'Chore': 'Chore',
+            'Misc': 'Miscellaneous',
+        };
+        // Group commits by their semantic prefix
+        const groupedCommits = commitMessages
+            .reduce((acc, commit) => {
+            let [prefix, message] = commit.split(':').map(str => str.trim());
+            if (!message) {
+                message = prefix;
+                prefix = 'Miscellaneous';
+            }
+            if (!commitPrefixMapping[prefix]) {
+                prefix = 'Misc';
+            }
+            acc[prefix] = [...(acc[prefix] || []), `- ${message}`];
+            return acc;
+        }, {});
+        // Sort groups, map to strings and join to final output
+        return Object.entries(groupedCommits)
+            .sort(([prefixA], [prefixB]) => {
+            const semanticPrefixes = Object.keys(commitPrefixMapping);
+            return semanticPrefixes.indexOf(prefixA) - semanticPrefixes.indexOf(prefixB);
+        })
+            .map(([prefix, commits]) => `**${commitPrefixMapping[prefix]}:**\n${commits.join('\n')}`)
+            .join('\n\n');
+    });
+}
+function getAsset(path, name) {
+    if (!name || name.length == 0) {
+        name = (0, path_1.basename)(path);
+    }
+    return {
+        name,
+        mime: (0, mime_1.getType)(path) || 'application/octet-stream',
+        size: (0, fs_1.lstatSync)(path).size,
+        file: (0, fs_1.readFileSync)(path),
+    };
+}
+//# sourceMappingURL=main.js.map
