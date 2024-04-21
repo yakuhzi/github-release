@@ -21,7 +21,7 @@ async function run(): Promise<void> {
 
     const release = await createGithubRelease()
     await uploadAsset(release)
-    await sendAssetOverTelegram()
+    await sendAssetOverTelegram(release)
     await sendFirebaseMessage()
 
     console.log(`🚀 Release ready at ${release.html_url}`)
@@ -54,8 +54,8 @@ async function createGithubRelease(): Promise<Release> {
 }
 
 async function uploadAsset(release: Release): Promise<void> {
-  const filePath = core.getInput('file') ?? process.env.INPUT_FILE
-  const assetName = core.getInput('asset-name') ?? process.env.INPUT_ASSET_NAME
+  const filePath = core.getInput('file') || process.env.INPUT_FILE
+  const assetName = core.getInput('asset-name') || process.env.INPUT_ASSET_NAME
 
   if (!filePath || !assetName) {
     return
@@ -79,17 +79,23 @@ async function uploadAsset(release: Release): Promise<void> {
   })
 }
 
-async function sendAssetOverTelegram(): Promise<void> {
-  const filePath = core.getInput('file') ?? process.env.INPUT_FILE
-  const assetName = core.getInput('asset-name') ?? process.env.INPUT_ASSET_NAME
-  const botToken = core.getInput('bot-token') ?? process.env.INPUT_BOT_TOKEN
-  const chatId = core.getInput('chat-id') ?? process.env.INPUT_CHAT_ID
+async function sendAssetOverTelegram(release: Release): Promise<void> {
+  const filePath = core.getInput('file') || process.env.INPUT_FILE
+  const assetName = core.getInput('asset-name') || process.env.INPUT_ASSET_NAME
+  const botToken = core.getInput('bot-token') || process.env.INPUT_BOT_TOKEN
+  const chatId = core.getInput('chat-id') || process.env.INPUT_CHAT_ID
 
   if (!filePath || !botToken || !chatId) {
     return
   }
 
   console.log(`📧️ Sending asset to Telegram chat '${chatId}'`)
+
+  await axios.post(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+    chat_id: chatId,
+    text: `*Release ${release.name}*\n\n${release.body}`,
+    parse_mode: 'markdown',
+  })
 
   const form = new FormData()
   const buffer = fs.readFileSync(filePath)
@@ -100,9 +106,9 @@ async function sendAssetOverTelegram(): Promise<void> {
 }
 
 async function sendFirebaseMessage(): Promise<void> {
-  const firebaseServerKey = core.getInput('firebase-server-key') ?? process.env.INPUT_FIREBASE_SERVER_KEY
-  const firebaseTopic = core.getInput('firebase-topic') ?? process.env.INPUT_FIREBASE_TOPIC
-  const appName = core.getInput('app-name') ?? process.env.INPUT_APP_NAME
+  const firebaseServerKey = core.getInput('firebase-server-key') || process.env.INPUT_FIREBASE_SERVER_KEY
+  const firebaseTopic = core.getInput('firebase-topic') || process.env.INPUT_FIREBASE_TOPIC
+  const appName = core.getInput('app-name') || process.env.INPUT_APP_NAME
   const tag = process.env.GITHUB_REF!.split('/')[2]
 
   if (!firebaseServerKey || !firebaseTopic || !appName || !tag) {
