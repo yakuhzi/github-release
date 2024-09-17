@@ -15,8 +15,8 @@ inputs:
   chat-id:
     description: 'Id of the chat to send the asset to'
     required: false
-  firebase-server-key:
-    description: 'Firebase server key'
+  firebase-service-account-key:
+    description: 'Base64 encoded Firebase service account key'
     required: false
   firebase-topic:
     description: 'Topic channel of the Firebase message'

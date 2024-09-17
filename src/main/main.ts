@@ -8,7 +8,8 @@ import { basename } from 'path'
 import * as util from 'util'
 import { exec } from 'child_process'
 import axios from 'axios'
-import { getType } from 'mime'
+import mime from 'mime'
+import * as admin from 'firebase-admin'
 
 const octokit = github.getOctokit(process.env.GITHUB_TOKEN!)
 run()
@@ -106,26 +107,27 @@ async function sendAssetOverTelegram(release: Release): Promise<void> {
 }
 
 async function sendFirebaseMessage(): Promise<void> {
-  const firebaseServerKey = core.getInput('firebase-server-key') || process.env.INPUT_FIREBASE_SERVER_KEY
+  const firebaseServiceAccountKeyBase64 = core.getInput('firebase-service-account-key')
+    || process.env.INPUT_FIREBASE_SERVICE_ACCOUNT_KEY
   const firebaseTopic = core.getInput('firebase-topic') || process.env.INPUT_FIREBASE_TOPIC
   const appName = core.getInput('app-name') || process.env.INPUT_APP_NAME
   const tag = process.env.GITHUB_REF!.split('/')[2]
 
-  if (!firebaseServerKey || !firebaseTopic || !appName || !tag) {
+  if (!firebaseServiceAccountKeyBase64 || !firebaseTopic || !appName || !tag) {
     return
   }
 
   console.log(`🔔 Sending Firebase message to topic '${firebaseTopic}'`)
-  await axios.post('https://fcm.googleapis.com/fcm/send', {
-    to: `/topics/${firebaseTopic}`,
+  const firebaseServiceAccountKey = JSON.parse(Buffer.from(firebaseServiceAccountKeyBase64, 'base64').toString('utf-8'))
+  const firebaseAdmin = admin.initializeApp({
+    credential: admin.credential.cert(firebaseServiceAccountKey as admin.ServiceAccount),
+  })
+
+  await firebaseAdmin.messaging().send({
+    topic: firebaseTopic,
     data: {
       name: appName,
       version: tag.replace('v', ''),
-    },
-  }, {
-    headers: {
-      'Authorization': `key=${firebaseServerKey}`,
-      'Content-Type': 'application/json',
     },
   })
 }
@@ -202,7 +204,7 @@ function getAsset(path: string, name?: string): Asset {
 
   return {
     name,
-    mime: getType(path) || 'application/octet-stream',
+    mime: mime.getType(path) || 'application/octet-stream',
     size: lstatSync(path).size,
     file: readFileSync(path),
   }

@@ -9,7 +9,7 @@ Here is an example how to use this action:
 
 ```yaml  
 - name: Create GitHub release
-  uses: yakuhzi/github-release@v3
+  uses: yakuhzi/github-release@v4
   with:
     file: /path/to/file.ext
     asset_name: file.ext
@@ -34,10 +34,10 @@ chat-id: 123456
 ```
 
 If you also want to send the released app name and version in a Firebase message, add the following environment
-variables:
+variables (where `FIREBASE_SERVICE_ACCOUNT_KEY` is the base64 encoded service account key JSON):
 
 ```yaml
-firebase-server-key: ${{ secrets.FIREBASE_SERVER_KEY }}
+firebase-service-account-key: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
 firebase-topic: ${{ secrets.FIREBASE_TOPIC }}
 app-name: ${{ secrets.APP_NAME }}
 ```
