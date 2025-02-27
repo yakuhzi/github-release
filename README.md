@@ -12,7 +12,7 @@ Here is an example how to use this action:
   uses: yakuhzi/github-release@v4
   with:
     file: /path/to/file.ext
-    asset_name: file.ext
+    asset-name: file.ext
   env:
     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
