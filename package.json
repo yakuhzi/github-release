@@ -16,21 +16,21 @@
     "url": "https://github.com/yakuhzi/action-release.git"
   },
   "dependencies": {
-    "@actions/core": "^1.10.1",
+    "@actions/core": "^1.11.1",
     "@actions/github": "^6.0.0",
-    "axios": "^1.7.7",
-    "firebase-admin": "^12.5.0",
+    "axios": "^1.8.1",
+    "firebase-admin": "^13.1.0",
     "mime": "^3.0.0"
   },
   "devDependencies": {
     "@types/mime": "^3.0.4",
-    "@types/node": "^22.5.5",
-    "@typescript-eslint/eslint-plugin": "^8.6.0",
-    "@typescript-eslint/parser": "^8.6.0",
-    "dotenv": "^16.4.5",
-    "eslint": "^9.10.0",
+    "@types/node": "^22.13.5",
+    "@typescript-eslint/eslint-plugin": "^8.25.0",
+    "@typescript-eslint/parser": "^8.25.0",
+    "dotenv": "^16.4.7",
+    "eslint": "^9.21.0",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.6.2"
+    "typescript": "^5.7.3"
   }
 }
