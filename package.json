@@ -2,35 +2,41 @@
   "name": "github-release",
   "version": "3.1.0",
   "description": "A GitHub Action that creates a Github release with file upload and automatically generated release notes.",
-  "main": "dist/main.js",
-  "scripts": {
-    "build": "tsc",
-    "start": "node -r dotenv/config .",
-    "start:dev": "ts-node --project tsconfig.json --files -r tsconfig-paths/register -r dotenv/config src/main/main.ts"
-  },
-  "keywords": [],
   "author": "Yakuhzi",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/yakuhzi/action-release.git"
   },
+  "type": "module",
+  "exports": "./dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node --env-file=.env ./dist/index.js",
+    "start:dev": "npx @github/local-action . src/main/main.ts .env",
+    "lint": "eslint .",
+    "format": "prettier --write ."
+  },
   "dependencies": {
     "@actions/core": "^1.11.1",
-    "@actions/github": "^6.0.0",
-    "axios": "^1.8.1",
-    "firebase-admin": "^13.1.0",
+    "@actions/github": "^6.0.1",
+    "axios": "^1.9.0",
+    "firebase-admin": "^13.4.0",
     "mime": "^3.0.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.28.0",
     "@types/mime": "^3.0.4",
-    "@types/node": "^22.13.5",
-    "@typescript-eslint/eslint-plugin": "^8.25.0",
-    "@typescript-eslint/parser": "^8.25.0",
-    "dotenv": "^16.4.7",
-    "eslint": "^9.21.0",
-    "ts-node": "^10.9.2",
+    "@types/node": "^22.15.30",
+    "@typescript-eslint/eslint-plugin": "^8.33.1",
+    "@typescript-eslint/parser": "^8.33.1",
+    "eslint": "^9.28.0",
+    "global": "^4.4.0",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.7.3"
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.33.1"
+  },
+  "engines": {
+    "node": ">=20.0.0"
   }
 }

@@ -1,8 +1,7 @@
-import { setFailed } from '@actions/core/lib/core'
 import * as github from '@actions/github'
 import * as core from '@actions/core'
-import { Release } from './release'
-import { Asset } from './asset'
+import type { Release } from './release.js'
+import type { Asset } from './asset.js'
 import fs, { lstatSync, readFileSync } from 'fs'
 import { basename } from 'path'
 import * as util from 'util'
@@ -11,13 +10,14 @@ import axios from 'axios'
 import mime from 'mime'
 import * as admin from 'firebase-admin'
 
-const octokit = github.getOctokit(process.env.GITHUB_TOKEN!)
-run()
+const octokit = github.getOctokit(process.env['GITHUB_TOKEN']!)
+const tag = process.env['GITHUB_REF_NAME'] ?? ''
 
-async function run(): Promise<void> {
+export async function run(): Promise<void> {
   try {
-    if (!process.env.GITHUB_REF?.startsWith('refs/tags/')) {
-      throw new Error('⚠️ GitHub Releases requires a tag')
+    if (!tag) {
+      core.setFailed('⚠️ GitHub Releases requires a tag')
+      return
     }
 
     const release = await createGithubRelease()
@@ -25,21 +25,20 @@ async function run(): Promise<void> {
     await sendAssetOverTelegram(release)
     await sendFirebaseMessage()
 
-    console.log(`🚀 Release ready at ${release.html_url}`)
-  } catch (error) {
+    core.debug(`🚀 Release ready at ${release.html_url}`)
+  } catch (error: unknown) {
     if (error instanceof Error) {
-      setFailed(error.message)
+      core.setFailed(error.message)
     } else {
-      setFailed(`⚠️ Unexpected error: '${error}'`)
+      core.setFailed(`⚠️ Unexpected error: '${error as string}'`)
     }
   }
 }
 
 async function createGithubRelease(): Promise<Release> {
-  const [owner, repo] = process.env.GITHUB_REPOSITORY!.split('/')
-  const tag = process.env.GITHUB_REF!.split('/')[2]
+  const [owner, repo] = process.env['GITHUB_REPOSITORY']!.split('/')
   const releaseNotes = await generateReleaseNotes()
-  console.log(`👨‍🏭 Creating new GitHub release for tag '${tag}'`)
+  core.debug(`👨‍🏭 Creating new GitHub release for tag '${tag}'`)
 
   const response = await octokit.rest.repos.createRelease({
     owner,
@@ -55,17 +54,17 @@ async function createGithubRelease(): Promise<Release> {
 }
 
 async function uploadAsset(release: Release): Promise<void> {
-  const filePath = core.getInput('file') || process.env.INPUT_FILE
-  const assetName = core.getInput('asset-name') || process.env.INPUT_ASSET_NAME
+  const filePath = core.getInput('file') || core.getInput('file')
+  const assetName = core.getInput('asset-name') || core.getInput('asset-name')
 
   if (!filePath || !assetName) {
     return
   }
 
   const asset = getAsset(filePath, assetName)
-  const [owner, repo] = process.env.GITHUB_REPOSITORY!.split('/')
+  const [owner, repo] = process.env['GITHUB_REPOSITORY']!.split('/')
 
-  console.log(`⬆️ Uploading asset '${asset.name}'`)
+  core.debug(`⬆️ Uploading asset '${asset.name}'`)
   await octokit.rest.repos.uploadReleaseAsset({
     owner,
     repo,
@@ -81,44 +80,46 @@ async function uploadAsset(release: Release): Promise<void> {
 }
 
 async function sendAssetOverTelegram(release: Release): Promise<void> {
-  const filePath = core.getInput('file') || process.env.INPUT_FILE
-  const assetName = core.getInput('asset-name') || process.env.INPUT_ASSET_NAME
-  const botToken = core.getInput('bot-token') || process.env.INPUT_BOT_TOKEN
-  const chatId = core.getInput('chat-id') || process.env.INPUT_CHAT_ID
+  const filePath = core.getInput('file')
+  const assetName = core.getInput('asset-name')
+  const botToken = core.getInput('bot-token')
+  const chatId = core.getInput('chat-id')
 
   if (!filePath || !botToken || !chatId) {
     return
   }
 
-  console.log(`📧️ Sending asset to Telegram chat '${chatId}'`)
+  core.debug(`📧️ Sending asset to Telegram chat '${chatId}'`)
 
   await axios.post(`https://api.telegram.org/bot${botToken}/sendMessage`, {
     chat_id: chatId,
-    text: `*Release ${release.name}*\n\n${release.body}`,
+    text: `*Release ${release.name ?? release.tag_name}*\n\n${release.body ?? '- No release notes'}`,
     parse_mode: 'markdown',
   })
 
   const form = new FormData()
   const buffer = fs.readFileSync(filePath)
   form.append('chat_id', chatId)
-  form.append('document', new Blob([buffer]), assetName ?? filePath.split('/').pop())
+  form.append('document', new Blob([buffer]), assetName || filePath.split('/').pop())
 
   await axios.post(`https://api.telegram.org/bot${botToken}/sendDocument`, form)
 }
 
 async function sendFirebaseMessage(): Promise<void> {
   const firebaseServiceAccountKeyBase64 = core.getInput('firebase-service-account-key')
-    || process.env.INPUT_FIREBASE_SERVICE_ACCOUNT_KEY
-  const firebaseTopic = core.getInput('firebase-topic') || process.env.INPUT_FIREBASE_TOPIC
-  const appName = core.getInput('app-name') || process.env.INPUT_APP_NAME
-  const tag = process.env.GITHUB_REF!.split('/')[2]
+  const firebaseTopic = core.getInput('firebase-topic')
+  const appName = core.getInput('app-name')
 
   if (!firebaseServiceAccountKeyBase64 || !firebaseTopic || !appName || !tag) {
     return
   }
 
-  console.log(`🔔 Sending Firebase message to topic '${firebaseTopic}'`)
-  const firebaseServiceAccountKey = JSON.parse(Buffer.from(firebaseServiceAccountKeyBase64, 'base64').toString('utf-8'))
+  core.debug(`🔔 Sending Firebase message to topic '${firebaseTopic}'`)
+
+  const firebaseServiceAccountKey = JSON.parse(
+    Buffer.from(firebaseServiceAccountKeyBase64, 'base64').toString('utf-8'),
+  ) as string
+
   const firebaseAdmin = admin.initializeApp({
     credential: admin.credential.cert(firebaseServiceAccountKey as admin.ServiceAccount),
   })
@@ -142,7 +143,7 @@ async function generateReleaseNotes(): Promise<string> {
   const { stdout: initialCommit } = await execAsync('git rev-list --max-parents=0 HEAD')
   const [newVersion, oldVersion = initialCommit.trim()] = tags.trim().split('\n')
 
-  if (newVersion !== process.env.GITHUB_REF!.split('/')[2]) {
+  if (newVersion !== tag) {
     throw new Error('⚠️ Latest tag does not match with current tag')
   }
 
@@ -154,38 +155,37 @@ async function generateReleaseNotes(): Promise<string> {
 
   // Filter duplicate and release commit messages
   commitMessages = commitMessages
-    .filter((commitMessage, index) => commitMessages.indexOf(commitMessage) == index)
-    .filter(commitMessage => !commitMessage.startsWith('Chore: Release'))
+    .filter((commitMessage, index) => commitMessages.indexOf(commitMessage) === index)
+    .filter((commitMessage) => !commitMessage.startsWith('Chore: ReleaseDto'))
 
   // Define order and replacement of semantic prefixes
-  const commitPrefixMapping: { [key: string]: string } = {
-    'Feat': 'Features',
-    'Fix': 'Fixes',
-    'Docs': 'Documentation',
-    'Test': 'Tests',
-    'Refactor': 'Refactoring',
-    'Style': 'Style',
-    'Chore': 'Chore',
-    'Misc': 'Miscellaneous',
+  const commitPrefixMapping: Record<string, string> = {
+    Feat: 'Features',
+    Fix: 'Fixes',
+    Docs: 'Documentation',
+    Test: 'Tests',
+    Refactor: 'Refactoring',
+    Style: 'Style',
+    Chore: 'Chore',
+    Misc: 'Miscellaneous',
   }
 
   // Group commits by their semantic prefix
-  const groupedCommits = commitMessages
-    .reduce((acc: { [key: string]: string[] }, commit: string) => {
-      let [prefix, message]: string[] = commit.split(':').map(str => str.trim())
+  const groupedCommits = commitMessages.reduce((acc: Record<string, string[]>, commit: string) => {
+    let [prefix, message]: string[] = commit.split(':').map((str) => str.trim())
 
-      if (!message) {
-        message = prefix
-        prefix = 'Miscellaneous'
-      }
+    if (!message) {
+      message = prefix
+      prefix = 'Miscellaneous'
+    }
 
-      if (!commitPrefixMapping[prefix]) {
-        prefix = 'Misc'
-      }
+    if (!commitPrefixMapping[prefix]) {
+      prefix = 'Misc'
+    }
 
-      acc[prefix] = [...(acc[prefix] || []), `- ${message}`]
-      return acc
-    }, {})
+    acc[prefix] = [...(acc[prefix] ?? []), `- ${message}`]
+    return acc
+  }, {})
 
   // Sort groups, map to strings and join to final output
   return Object.entries(groupedCommits)
@@ -198,13 +198,9 @@ async function generateReleaseNotes(): Promise<string> {
 }
 
 function getAsset(path: string, name?: string): Asset {
-  if (!name || name.length == 0) {
-    name = basename(path)
-  }
-
   return {
-    name,
-    mime: mime.getType(path) || 'application/octet-stream',
+    name: name ?? basename(path),
+    mime: mime.getType(path) ?? 'application/octet-stream',
     size: lstatSync(path).size,
     file: readFileSync(path),
   }

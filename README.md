@@ -7,7 +7,7 @@ Also, a file can be uploaded and attached to the newly created GitHub release an
 
 Here is an example how to use this action:
 
-```yaml  
+```yaml
 - name: Create GitHub release
   uses: yakuhzi/github-release@v4
   with:
@@ -19,7 +19,7 @@ Here is an example how to use this action:
 
 Make sure to fetch the whole repository history, otherwise release notes can't be generated properly:
 
-```yaml  
+```yaml
 - name: Checkout
   uses: actions/checkout@main
   with:
@@ -28,7 +28,7 @@ Make sure to fetch the whole repository history, otherwise release notes can't b
 
 To also send the asset file over Telegram, add the following environment variables:
 
-```yaml  
+```yaml
 bot-token: /path/to/file.ext
 chat-id: 123456
 ```

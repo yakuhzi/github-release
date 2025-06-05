@@ -1,10 +1,10 @@
 # https://help.github.com/en/articles/metadata-syntax-for-github-actions
 name: 'Action GitHub Release'
-description: 'Creates a Github release with file upload and automatically generated release notes.'
+description: 'Creates a GitHub release with file upload and automatically generated release notes.'
 author: 'yakuhzi'
 inputs:
   file:
-    description: 'File to upload to the release'
+    description: 'Asset to be attached to the release'
     required: false
   asset-name:
     description: 'Name of the asset to upload'
@@ -26,7 +26,7 @@ inputs:
     required: false
 runs:
   using: 'node20'
-  main: 'dist/main.js'
+  main: 'dist/index.js'
 branding:
   color: 'green'
   icon: 'package'
