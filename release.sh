@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Updated 06.06.2025
+
 # Major tag version
 VERSION="v4"
 

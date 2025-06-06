@@ -1,7 +1,7 @@
 # https://help.github.com/en/articles/metadata-syntax-for-github-actions
 name: 'Action GitHub Release'
 description: 'Creates a GitHub release with file upload and automatically generated release notes.'
-author: 'yakuhzi'
+author: 'Yakuhzi'
 inputs:
   file:
     description: 'Asset to be attached to the release'

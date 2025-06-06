@@ -28,7 +28,7 @@ export async function run(): Promise<void> {
     core.info(`🚀 Release ready at ${release.html_url}`)
   } catch (error: unknown) {
     if (error instanceof Error) {
-      core.setFailed(error.message)
+      core.setFailed(error)
     } else {
       core.setFailed(`⚠️ Unexpected error: '${error as string}'`)
     }
@@ -54,8 +54,8 @@ async function createGithubRelease(): Promise<Release> {
 }
 
 async function uploadAsset(release: Release): Promise<void> {
-  const filePath = core.getInput('file') || core.getInput('file')
-  const assetName = core.getInput('asset-name') || core.getInput('asset-name')
+  const filePath = core.getInput('file')
+  const assetName = core.getInput('asset-name')
 
   if (!filePath || !assetName) {
     return

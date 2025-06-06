@@ -13,7 +13,7 @@
   "scripts": {
     "build": "tsc",
     "start": "node --env-file=.env ./dist/index.js",
-    "start:dev": "npx @github/local-action . src/main/main.ts .env",
+    "start:dev": "npx @github/local-action . src/main.ts .env",
     "release": "./release.sh",
     "lint": "eslint .",
     "format": "prettier --write ."
@@ -33,7 +33,6 @@
     "@typescript-eslint/parser": "^8.33.1",
     "eslint": "^9.28.0",
     "global": "^4.4.0",
-    "tsconfig-paths": "^4.2.0",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.33.1"
   },
