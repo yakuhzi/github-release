@@ -14,6 +14,7 @@
     "build": "tsc",
     "start": "node --env-file=.env ./dist/index.js",
     "start:dev": "npx @github/local-action . src/main/main.ts .env",
+    "release": "./release.sh",
     "lint": "eslint .",
     "format": "prettier --write ."
   },
