@@ -156,7 +156,7 @@ async function generateReleaseNotes(): Promise<string> {
   // Filter duplicate and release commit messages
   commitMessages = commitMessages
     .filter((commitMessage, index) => commitMessages.indexOf(commitMessage) === index)
-    .filter((commitMessage) => !commitMessage.startsWith('Chore: ReleaseDto'))
+    .filter((commitMessage) => !commitMessage.startsWith('Chore: Release'))
 
   // Define order and replacement of semantic prefixes
   const commitPrefixMapping: Record<string, string> = {
