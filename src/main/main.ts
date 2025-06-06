@@ -9,6 +9,7 @@ import { exec } from 'child_process'
 import axios from 'axios'
 import mime from 'mime'
 import * as admin from 'firebase-admin'
+import { getAsset } from 'node:sea'
 
 const octokit = github.getOctokit(process.env['GITHUB_TOKEN']!)
 const tag = process.env['GITHUB_REF_NAME'] ?? ''
@@ -25,7 +26,7 @@ export async function run(): Promise<void> {
     await sendAssetOverTelegram(release)
     await sendFirebaseMessage()
 
-    core.debug(`🚀 Release ready at ${release.html_url}`)
+    core.info(`🚀 Release ready at ${release.html_url}`)
   } catch (error: unknown) {
     if (error instanceof Error) {
       core.setFailed(error.message)
@@ -38,7 +39,7 @@ export async function run(): Promise<void> {
 async function createGithubRelease(): Promise<Release> {
   const [owner, repo] = process.env['GITHUB_REPOSITORY']!.split('/')
   const releaseNotes = await generateReleaseNotes()
-  core.debug(`👨‍🏭 Creating new GitHub release for tag '${tag}'`)
+  core.info(`👨‍🏭 Creating new GitHub release for tag '${tag}'`)
 
   const response = await octokit.rest.repos.createRelease({
     owner,
@@ -64,7 +65,7 @@ async function uploadAsset(release: Release): Promise<void> {
   const asset = getAsset(filePath, assetName)
   const [owner, repo] = process.env['GITHUB_REPOSITORY']!.split('/')
 
-  core.debug(`⬆️ Uploading asset '${asset.name}'`)
+  core.info(`⬆️ Uploading asset '${asset.name}'`)
   await octokit.rest.repos.uploadReleaseAsset({
     owner,
     repo,
@@ -89,7 +90,7 @@ async function sendAssetOverTelegram(release: Release): Promise<void> {
     return
   }
 
-  core.debug(`📧️ Sending asset to Telegram chat '${chatId}'`)
+  core.info(`📧️ Sending asset to Telegram chat '${chatId}'`)
 
   await axios.post(`https://api.telegram.org/bot${botToken}/sendMessage`, {
     chat_id: chatId,
@@ -114,7 +115,7 @@ async function sendFirebaseMessage(): Promise<void> {
     return
   }
 
-  core.debug(`🔔 Sending Firebase message to topic '${firebaseTopic}'`)
+  core.info(`🔔 Sending Firebase message to topic '${firebaseTopic}'`)
 
   const firebaseServiceAccountKey = JSON.parse(
     Buffer.from(firebaseServiceAccountKeyBase64, 'base64').toString('utf-8'),
@@ -143,9 +144,10 @@ async function generateReleaseNotes(): Promise<string> {
 
   const { stdout: initialCommit } = await execAsync('git rev-list --max-parents=0 HEAD')
   const [newVersion, oldVersion = initialCommit.trim()] = tags.trim().split('\n')
+  core.info(`Found recent tags: '${newVersion}' (latest), '${oldVersion}' (previous)`)
 
   if (newVersion !== tag) {
-    throw new Error('⚠️ Latest tag does not match with current tag')
+    throw new Error(`⚠️ Latest tag '${newVersion}' does not match with current tag '${tag}'`)
   }
 
   // Get commit messages until old version
