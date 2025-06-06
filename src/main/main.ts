@@ -138,8 +138,9 @@ async function generateReleaseNotes(): Promise<string> {
 
   // Get old and new version tag or commit
   const { stdout: tags } = await execAsync(
-    'git for-each-ref --sort=-authordate --format \'%(refname:short)\' --count 2 refs/tags',
+    'git for-each-ref --sort=-taggerdate --format \'%(refname:short)\' --count 2 refs/tags',
   )
+
   const { stdout: initialCommit } = await execAsync('git rev-list --max-parents=0 HEAD')
   const [newVersion, oldVersion = initialCommit.trim()] = tags.trim().split('\n')
 
@@ -151,6 +152,7 @@ async function generateReleaseNotes(): Promise<string> {
   const { stdout: commitMessagesString } = await execAsync(
     `git --no-pager log ${oldVersion}...${newVersion} --pretty=format:%s`,
   )
+
   let commitMessages = commitMessagesString.split('\n').reverse()
 
   // Filter duplicate and release commit messages
