@@ -8,7 +8,7 @@ import * as util from 'util'
 import { exec } from 'child_process'
 import axios from 'axios'
 import mime from 'mime'
-import * as admin from 'firebase-admin'
+import admin from 'firebase-admin'
 
 const octokit = github.getOctokit(process.env['GITHUB_TOKEN']!)
 const tag = process.env['GITHUB_REF_NAME'] ?? ''
@@ -138,7 +138,7 @@ async function generateReleaseNotes(): Promise<string> {
 
   // Get old and new version tag or commit
   const { stdout: tags } = await execAsync(
-    'git for-each-ref --sort=-creatordate --format \'%(refname:short)\' --count 2 refs/tags',
+    "git for-each-ref --sort=-creatordate --format '%(refname:short)' --count 2 refs/tags",
   )
 
   const { stdout: initialCommit } = await execAsync('git rev-list --max-parents=0 HEAD')
