@@ -16,7 +16,8 @@
     "start:dev": "npx @github/local-action . src/main.ts .env",
     "release": "./release.sh",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "clean": "rm -rf dist"
   },
   "dependencies": {
     "@actions/core": "^1.11.1",

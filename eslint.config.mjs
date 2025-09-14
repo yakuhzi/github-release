@@ -1,5 +1,5 @@
 // ESLint 9.28.0 / TS-ESLint 8.33.1
-// Updated 05.06.2025
+// Updated 27.06.2025
 
 import tseslint from 'typescript-eslint'
 import globals from 'globals'
@@ -1160,11 +1160,11 @@ export default tseslint.config(
         'error',
         {
           // Whether to allow accessing class members marked as private with array notation
-          allowPrivateClassPropertyAccess: false,
+          allowPrivateClassPropertyAccess: true,
           // Whether to allow accessing class members marked as protected with array notation
-          allowProtectedClassPropertyAccess: false,
+          allowProtectedClassPropertyAccess: true,
           // Whether to allow accessing properties matching an index signature with array notation
-          allowIndexSignaturePropertyAccess: false,
+          allowIndexSignaturePropertyAccess: true,
         },
       ],
       // Require explicit return types on functions and class methods
@@ -1401,7 +1401,7 @@ export default tseslint.config(
         'error',
         {
           // Specific numbers that are allowed
-          ignore: [-1, 0, 1, 2, 3, 4, 5, 8, 16, 32, 60, 64, 100, 1000, 3000],
+          ignore: [-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 16, 24, 32, 40, 48, 56, 60, 64, 100, 1000, 3000],
           // Whether to ignore numbers used as array indexes
           ignoreArrayIndexes: true,
           // Whether default values are considered okay
@@ -1614,7 +1614,21 @@ export default tseslint.config(
       // Require unary negation to take a number
       '@typescript-eslint/no-unsafe-unary-minus': 'error',
       // Disallow unused expressions
-      '@typescript-eslint/no-unused-expressions': 'error',
+      '@typescript-eslint/no-unused-expressions': [
+        'error',
+        {
+          // Whether to allow unused expressions that are part of a statement
+          allowShortCircuit: true,
+          // Whether to allow unused expressions that are part of a conditional test
+          allowTernary: false,
+          // Whether to allow tagged templates
+          allowTaggedTemplates: false,
+          // Whether to enforce the rule for JSX expressions
+          enforceForJSX: true,
+          // Whether to ignore directives
+          ignoreDirectives: false,
+        },
+      ],
       // Disallow unused variables
       '@typescript-eslint/no-unused-vars': [
         'error',
@@ -1695,7 +1709,7 @@ export default tseslint.config(
       '@typescript-eslint/prefer-as-const': 'error',
       // Require destructuring from arrays and/or objects
       '@typescript-eslint/prefer-destructuring': [
-        'error',
+        'off', // Not wanted
         {
           // Whether to enforce destructuring for arrays
           array: true,
