@@ -13,6 +13,21 @@ import admin from 'firebase-admin'
 const octokit = github.getOctokit(process.env['GITHUB_TOKEN']!)
 const tag = process.env['GITHUB_REF_NAME'] ?? ''
 
+// Define order and replacement of semantic prefixes
+const prefixMapping: Record<string, string> = {
+  build: 'Build',
+  chore: 'Chore',
+  ci: 'Continuous Integration',
+  docs: 'Documentation',
+  feat: 'Features',
+  fix: 'Fixes',
+  misc: 'Miscellaneous',
+  perf: 'Performance',
+  refactor: 'Refactoring',
+  style: 'Style',
+  test: 'Tests',
+}
+
 export async function run(): Promise<void> {
   try {
     if (!tag) {
@@ -161,29 +176,18 @@ async function generateReleaseNotes(): Promise<string> {
     .filter((commitMessage, index) => commitMessages.indexOf(commitMessage) === index)
     .filter((commitMessage) => !commitMessage.startsWith('Chore: Release'))
 
-  // Define order and replacement of semantic prefixes
-  const commitPrefixMapping: Record<string, string> = {
-    Feat: 'Features',
-    Fix: 'Fixes',
-    Docs: 'Documentation',
-    Test: 'Tests',
-    Refactor: 'Refactoring',
-    Style: 'Style',
-    Chore: 'Chore',
-    Misc: 'Miscellaneous',
-  }
-
   // Group commits by their semantic prefix
   const groupedCommits = commitMessages.reduce((acc: Record<string, string[]>, commit: string) => {
     let [prefix, message]: string[] = commit.split(':').map((str) => str.trim())
+    prefix = prefix.toLowerCase()
 
     if (!message) {
       message = prefix
-      prefix = 'Miscellaneous'
+      prefix = 'misc'
     }
 
-    if (!commitPrefixMapping[prefix]) {
-      prefix = 'Misc'
+    if (!prefixMapping[prefix]) {
+      prefix = 'misc'
     }
 
     acc[prefix] = [...(acc[prefix] ?? []), `- ${message}`]
@@ -193,10 +197,10 @@ async function generateReleaseNotes(): Promise<string> {
   // Sort groups, map to strings and join to final output
   return Object.entries(groupedCommits)
     .sort(([prefixA], [prefixB]) => {
-      const semanticPrefixes = Object.keys(commitPrefixMapping)
+      const semanticPrefixes = Object.keys(prefixMapping)
       return semanticPrefixes.indexOf(prefixA) - semanticPrefixes.indexOf(prefixB)
     })
-    .map(([prefix, commits]) => `**${commitPrefixMapping[prefix]}:**\n${commits.join('\n')}`)
+    .map(([prefix, commits]) => `**${prefixMapping[prefix]}:**\n${commits.join('\n')}`)
     .join('\n\n')
 }
 
