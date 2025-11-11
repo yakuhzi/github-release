@@ -1,6 +1,6 @@
 {
   "name": "github-release",
-  "version": "4.2.3",
+  "version": "4.2.4",
   "description": "A GitHub Action that creates a Github release with file upload and automatically generated release notes.",
   "author": "Yakuhzi",
   "license": "MIT",
