@@ -15,17 +15,19 @@ const tag = process.env['GITHUB_REF_NAME'] ?? ''
 
 // Define order and replacement of semantic prefixes
 const prefixMapping: Record<string, string> = {
-  build: 'Build',
-  chore: 'Chore',
-  ci: 'Continuous Integration',
-  docs: 'Documentation',
   feat: 'Features',
-  fix: 'Fixes',
-  misc: 'Miscellaneous',
+  fix: 'Bug Fixes',
   perf: 'Performance',
+  security: 'Security',
+  revert: 'Reverts',
+  docs: 'Documentation',
   refactor: 'Refactoring',
-  style: 'Style',
+  style: 'Code Style',
   test: 'Tests',
+  build: 'Build',
+  ci: 'Continuous Integration',
+  chore: 'Chores',
+  misc: 'Miscellaneous',
 }
 
 export async function run(): Promise<void> {
