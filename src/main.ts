@@ -185,7 +185,7 @@ async function fetchTagsFromGitHub(
   const newVersion = sortedTags[0]
   const oldVersion = sortedTags.length > 1 ? sortedTags[1] : null
 
-  core.info(`Found recent tags: '${newVersion}' (latest), '${oldVersion ?? 'none'}' (previous)`)
+  core.info(`✅ Found recent tags: '${newVersion}' (latest), '${oldVersion ?? 'none'}' (previous)`)
 
   if (newVersion !== tag) {
     throw new Error(`⚠️ Latest tag '${newVersion}' does not match with current tag '${tag}'`)
