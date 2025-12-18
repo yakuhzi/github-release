@@ -4,11 +4,10 @@ import type { Release } from './release.js'
 import type { Asset } from './asset.js'
 import fs, { lstatSync, readFileSync } from 'fs'
 import { basename } from 'path'
-import * as util from 'util'
-import { exec } from 'child_process'
 import axios from 'axios'
 import mime from 'mime'
 import admin from 'firebase-admin'
+import * as semver from 'semver'
 
 const octokit = github.getOctokit(process.env['GITHUB_TOKEN']!)
 const tag = process.env['GITHUB_REF_NAME'] ?? ''
@@ -151,35 +150,86 @@ async function sendFirebaseMessage(): Promise<void> {
 }
 
 async function generateReleaseNotes(): Promise<string> {
-  const execAsync = util.promisify(exec)
+  const [owner, repo] = process.env['GITHUB_REPOSITORY']!.split('/')
+  const { newVersion, oldVersion } = await fetchTagsFromGitHub(owner, repo)
+  const commitMessages = await fetchCommitMessages(owner, repo, newVersion, oldVersion)
+  const groupedCommits = groupCommitsByPrefix(commitMessages)
+  return formatReleaseNotes(groupedCommits)
+}
 
-  // Get old and new version tag or commit
-  const { stdout: tags } = await execAsync(
-    "git for-each-ref --sort=-creatordate --format '%(refname:short)' --count 2 refs/tags",
-  )
+async function fetchTagsFromGitHub(
+  owner: string,
+  repo: string,
+): Promise<{ newVersion: string; oldVersion: string | null }> {
+  core.info('🔍 Fetching tags from GitHub API')
 
-  const { stdout: initialCommit } = await execAsync('git rev-list --max-parents=0 HEAD')
-  const [newVersion, oldVersion = initialCommit.trim()] = tags.trim().split('\n')
-  core.info(`Found recent tags: '${newVersion}' (latest), '${oldVersion}' (previous)`)
+  const { data: tags } = await octokit.rest.repos.listTags({
+    owner,
+    repo,
+    per_page: 100,
+  })
+
+  if (tags.length === 0) {
+    throw new Error('⚠️ No tags found in repository')
+  }
+
+  const sortedTags = tags
+    .map((tagItem) => tagItem.name.replace(/^v/, ''))
+    .filter((version) => semver.valid(version))
+    .sort((a, b) => semver.rcompare(a, b))
+
+  if (sortedTags.length === 0) {
+    throw new Error('⚠️ No valid semver tags found in repository')
+  }
+
+  const newVersion = sortedTags[0]
+  const oldVersion = sortedTags.length > 1 ? sortedTags[1] : null
+
+  core.info(`Found recent tags: '${newVersion}' (latest), '${oldVersion ?? 'none'}' (previous)`)
 
   if (newVersion !== tag) {
     throw new Error(`⚠️ Latest tag '${newVersion}' does not match with current tag '${tag}'`)
   }
 
-  // Get commit messages until old version
-  const { stdout: commitMessagesString } = await execAsync(
-    `git --no-pager log ${oldVersion}...${newVersion} --pretty=format:%s`,
-  )
+  return { newVersion, oldVersion }
+}
 
-  let commitMessages = commitMessagesString.split('\n').reverse()
+async function fetchCommitMessages(
+  owner: string,
+  repo: string,
+  newVersion: string,
+  oldVersion: string | null,
+): Promise<string[]> {
+  let commits
 
-  // Filter duplicate and release commit messages
-  commitMessages = commitMessages
+  if (oldVersion) {
+    core.info(`📝 Fetching commits between '${oldVersion}' and '${newVersion}'`)
+    const { data: comparison } = await octokit.rest.repos.compareCommitsWithBasehead({
+      owner,
+      repo,
+      basehead: `${oldVersion}...${newVersion}`,
+    })
+    commits = comparison.commits
+  } else {
+    core.info(`📝 Fetching all commits for tag '${newVersion}'`)
+    const { data: commitList } = await octokit.rest.repos.listCommits({
+      owner,
+      repo,
+      sha: newVersion,
+      per_page: 100,
+    })
+    commits = commitList
+  }
+
+  const commitMessages = commits.map((commit) => commit.commit.message.split('\n')[0])
+
+  return commitMessages
     .filter((commitMessage, index) => commitMessages.indexOf(commitMessage) === index)
     .filter((commitMessage) => !commitMessage.startsWith('Chore: Release'))
+}
 
-  // Group commits by their semantic prefix
-  const groupedCommits = commitMessages.reduce((acc: Record<string, string[]>, commit: string) => {
+function groupCommitsByPrefix(commitMessages: string[]): Record<string, string[]> {
+  return commitMessages.reduce((acc: Record<string, string[]>, commit: string) => {
     let [prefix, message]: string[] = commit.split(':').map((str) => str.trim())
     prefix = prefix.toLowerCase()
 
@@ -195,8 +245,9 @@ async function generateReleaseNotes(): Promise<string> {
     acc[prefix] = [...(acc[prefix] ?? []), `- ${message}`]
     return acc
   }, {})
+}
 
-  // Sort groups, map to strings and join to final output
+function formatReleaseNotes(groupedCommits: Record<string, string[]>): string {
   return Object.entries(groupedCommits)
     .sort(([prefixA], [prefixB]) => {
       const semanticPrefixes = Object.keys(prefixMapping)
