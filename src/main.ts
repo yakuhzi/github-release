@@ -174,7 +174,7 @@ async function fetchTagsFromGitHub(
   }
 
   const sortedTags = tags
-    .map((tagItem) => tagItem.name.replace(/^v/, ''))
+    .map((tagItem) => tagItem.name)
     .filter((version) => semver.valid(version))
     .sort((a, b) => semver.rcompare(a, b))
 
