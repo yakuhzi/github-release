@@ -2,7 +2,7 @@ import * as github from '@actions/github'
 import * as core from '@actions/core'
 import type { Release } from './release.js'
 import type { Asset } from './asset.js'
-import fs, { lstatSync, readFileSync } from 'fs'
+import fs, { readFileSync } from 'fs'
 import { basename } from 'path'
 import axios from 'axios'
 import mime from 'mime'
@@ -86,10 +86,7 @@ async function uploadAsset(release: Release): Promise<void> {
     repo,
     url: release.upload_url,
     release_id: release.id,
-    headers: {
-      'content-length': asset.size,
-      'content-type': asset.mime,
-    },
+    headers: { 'content-type': asset.mime },
     name: asset.name,
     data: asset.file as unknown as string,
   })
@@ -261,7 +258,6 @@ function getAsset(path: string, name?: string): Asset {
   return {
     name: name ?? basename(path),
     mime: mime.getType(path) ?? 'application/octet-stream',
-    size: lstatSync(path).size,
     file: readFileSync(path),
   }
 }
