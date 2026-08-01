@@ -1,0 +1,12 @@
+{
+    "name": "@types/mime",
+    "version": "4.0.0",
+    "description": "Stub TypeScript definitions entry for mime, which provides its own types definitions",
+    "main": "",
+    "scripts": {},
+    "license": "MIT",
+    "dependencies": {
+        "mime": "*"
+    },
+    "deprecated": "This is a stub types definition. mime provides its own type definitions, so you do not need this installed."
+}
