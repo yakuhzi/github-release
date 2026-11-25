@@ -6,7 +6,8 @@ import fs, { readFileSync } from 'fs'
 import { basename } from 'path'
 import axios from 'axios'
 import mime from 'mime'
-import admin from 'firebase-admin'
+import { cert, initializeApp, type ServiceAccount } from 'firebase-admin/app'
+import { getMessaging } from 'firebase-admin/messaging'
 import * as semver from 'semver'
 
 const octokit = github.getOctokit(process.env['GITHUB_TOKEN']!)
@@ -131,13 +132,11 @@ async function sendFirebaseMessage(): Promise<void> {
 
   const firebaseServiceAccountKey = JSON.parse(
     Buffer.from(firebaseServiceAccountKeyBase64, 'base64').toString('utf-8'),
-  ) as string
+  ) as ServiceAccount
 
-  const firebaseAdmin = admin.initializeApp({
-    credential: admin.credential.cert(firebaseServiceAccountKey as admin.ServiceAccount),
-  })
+  const firebaseApp = initializeApp({ credential: cert(firebaseServiceAccountKey) })
 
-  await firebaseAdmin.messaging().send({
+  await getMessaging(firebaseApp).send({
     topic: firebaseTopic,
     data: {
       name: appName,
@@ -160,7 +159,7 @@ async function fetchTagsFromGitHub(
 ): Promise<{ newVersion: string; oldVersion: string | null }> {
   core.info('🔍 Fetching tags from GitHub API')
 
-  const { data: tags } = await octokit.rest.repos.listTags({
+  const tags = await octokit.paginate(octokit.rest.repos.listTags, {
     owner,
     repo,
     per_page: 100,
