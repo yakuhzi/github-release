@@ -22,22 +22,22 @@
   "dependencies": {
     "@actions/core": "^3.0.1",
     "@actions/github": "^9.1.1",
-    "axios": "^1.19.0",
-    "firebase-admin": "^14.2.0",
-    "mime": "^4.1.0",
-    "semver": "^7.8.5"
+    "axios": "^1.21.1",
+    "firebase-admin": "^14.5.1",
+    "mime": "^4.1.2",
+    "semver": "^7.8.6"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@types/node": "^25.3.5",
-    "@types/semver": "^7.7.1",
-    "@typescript-eslint/eslint-plugin": "^8.56.1",
-    "@typescript-eslint/parser": "^8.56.1",
-    "eslint": "^10.0.2",
-    "globals": "^17.4.0",
-    "prettier": "^3.8.1",
-    "typescript": "^5.9.3",
-    "typescript-eslint": "^8.56.1"
+    "@types/node": "^26.6.10",
+    "@types/semver": "^7.8.0",
+    "@typescript-eslint/eslint-plugin": "^8.74.0",
+    "@typescript-eslint/parser": "^8.74.0",
+    "eslint": "^10.15.0",
+    "globals": "^17.14.0",
+    "prettier": "^3.10.1",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.74.0"
   },
   "engines": {
     "node": ">=20.0.0"

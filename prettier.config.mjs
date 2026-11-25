@@ -1,5 +1,5 @@
-// Prettier 3.5.3
-// Updated 05.06.2025
+// Prettier 3.10.1
+// Updated 21.11.2026
 
 const config = {
   experimentalTernaries: false, // Try prettier's new ternary formatting
@@ -9,6 +9,7 @@ const config = {
   useTabs: false, // Indent lines with tabs instead of spaces
   semi: false, // Print semicolons at the ends of statements
   singleQuote: true, // Use single quotes instead of double quotes
+  jsxSingleQuote: false, // Use single quotes instead of double quotes in JSX
   quoteProps: 'as-needed', // Change when properties in objects are quoted
   trailingComma: 'all', // Print trailing commas wherever possible in multi-line comma-separated syntactic structures
   bracketSpacing: true, // Print spaces between brackets in object literals
@@ -26,6 +27,9 @@ const config = {
   endOfLine: 'lf', // Ensure that files only contains Linux-style line endings
   embeddedLanguageFormatting: 'auto', // Control whether Prettier formats quoted code embedded in the file
   singleAttributePerLine: false, // Enforce single attribute per line in HTML
+  vueIndentScriptAndStyle: false, // Indent script and style tags in Vue files
+  plugins: [], // List of Prettier plugin paths or plugin objects to load
+  checkIgnorePragma: false, // Skip formatting files with @noprettier or @noformat in their first docblock comment
 }
 
 export default config

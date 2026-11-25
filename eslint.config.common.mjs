@@ -1,28 +1,24 @@
-// ESLint 9.28.0 / TS-ESLint 8.33.1
-// Updated 27.06.2025
+// ESLint 10.15.0 / TS-ESLint 8.73.0
+// Updated 21.11.2026
 
 import tseslint from 'typescript-eslint'
 import globals from 'globals'
 
 export default tseslint.config(
   tseslint.configs.base,
+  { ignores: ['**/dist/*', '**/*.js', '**/*.mjs'] },
   {
+    files: ['**/*.ts'],
     languageOptions: {
       ecmaVersion: 'latest',
-      sourceType: 'commonjs',
       globals: {
         ...globals.node,
       },
-    },
-  },
-  { files: ['src/**/*.ts'] },
-  { ignores: ['dist/**', '**/*.mjs', '**/*.js'] },
-  {
-    languageOptions: {
       parserOptions: {
         projectService: true,
         tsconfigRootDir: import.meta.dirname,
       },
+      sourceType: 'module',
     },
   },
 
@@ -102,6 +98,8 @@ export default tseslint.config(
         {
           // If re-exporting from an imported module, you should add the imports to the import-statement
           includeExports: true,
+          // Allows a type import alongside a value import from the same module
+          allowSeparateTypeImports: false,
         },
       ],
       // Disallow empty character classes in regular expressions
@@ -211,13 +209,7 @@ export default tseslint.config(
       // Disallow let or var variables that are read but never assigned
       'no-unassigned-vars': 'error',
       // Disallow the use of undeclared variables unless mentioned in /*global */ comments
-      'no-undef': [
-        'error',
-        {
-          // Whether to warn for variables used inside typeof check
-          typeof: false,
-        },
-      ],
+      'no-undef': 'off', // Handled by TypeScript compiler
       // Disallow confusing multiline expressions
       'no-unexpected-multiline': 'error',
       // Disallow unmodified loop conditions
@@ -251,7 +243,7 @@ export default tseslint.config(
         },
       ],
       // Disallow unused private class members
-      'no-unused-private-class-members': 'error',
+      'no-unused-private-class-members': 'off', // Handled by TS-ESLint
       // Disallow unused variables
       'no-unused-vars': 'off', // Handled by TS-ESLint
       // Disallow the use of variables before they are defined
@@ -260,6 +252,16 @@ export default tseslint.config(
       'no-useless-assignment': 'error',
       // Disallow useless backreferences in regular expressions
       'no-useless-backreference': 'error',
+      // Disallow losing originally caught error when re-throwing custom errors
+      'preserve-caught-error': [
+        'error',
+        {
+          // Mandates for all the catch blocks to have a caught error parameter
+          requireCatchParameter: true,
+          // Additional error class names to check for cause preservation
+          errorClassNames: [],
+        },
+      ],
       // Disallow assignments that can lead to race conditions due to usage of await or yield
       'require-atomic-updates': [
         'error',
@@ -406,13 +408,13 @@ export default tseslint.config(
       'func-style': [
         'error',
         // Requires the use of function expressions instead of function declarations
-        'declaration',
+        'expression',
         {
           // Allows the use of arrow functions.
           allowArrowFunctions: true,
           // Allows the use of function expressions and arrow functions when the variable declaration has a type
           allowTypeAnnotation: false,
-          overrides: { namedExports: 'declaration' },
+          overrides: { namedExports: 'expression' },
         },
       ],
       // Require grouped accessor pairs in object literals and classes
@@ -436,7 +438,7 @@ export default tseslint.config(
           // Enforces identifier length convention for property names
           properties: 'always',
           // Array of exceptions that will not be checked
-          exceptions: ['id', 'fs', 'to', 'a', 'b', 'x', 'y'],
+          exceptions: ['id', 'it', 'to', 'ws', 'a', 'b', 'x', 'y'],
           // Patterns that will not be checked
           exceptionPatterns: [],
         },
@@ -505,6 +507,8 @@ export default tseslint.config(
         {
           // Maximum number of nested callbacks allowed
           max: 3,
+          // Whether to count callbacks passed to constructor calls
+          checkConstructorCallCallbacks: true,
         },
       ],
       // Enforce a maximum number of parameters in function definitions
@@ -644,7 +648,7 @@ export default tseslint.config(
         },
       ],
       // Disallow declarations in the global scope
-      'no-implicit-globals': 'off',
+      'no-implicit-globals': 'error',
       // Disallow the use of eval()-like methods
       'no-implied-eval': 'off', // Handled by TS-ESLint
       // Disallow inline comments after code
@@ -778,7 +782,7 @@ export default tseslint.config(
         'error',
         {
           // Whether to reports declarations of globalThis
-          reportGlobalThis: false,
+          reportGlobalThis: true,
         },
       ],
       // Disallow ternary operators
@@ -964,11 +968,7 @@ export default tseslint.config(
       // Require template literals instead of string concatenation
       'prefer-template': 'error',
       // Enforce the consistent use of the radix argument when using parseInt()
-      radix: [
-        'error',
-        // Enforces providing a radix but disallows providing the 10 radix
-        'as-needed',
-      ],
+      radix: 'error',
       // Disallow async functions which have no await expression
       'require-await': 'off', // Handled by TS-ESLint
       // Enforce the use of u or v flag on regular expressions
@@ -1048,7 +1048,7 @@ export default tseslint.config(
     },
   },
 
-  // TypeScript ESLint
+  // TS-ESLint Rules
   {
     rules: {
       // Require that function overload signatures be consecutive
@@ -1268,6 +1268,8 @@ export default tseslint.config(
         {
           // Stringified regular expressions of type names to ignore
           ignoredTypeNames: ['error', 'RegExp', 'URL', 'URLSearchParams'],
+          // Whether to also check values of type `unknown`
+          checkUnknown: false,
         },
       ],
       // Disallow non-null assertion in locations that may be confusing
@@ -1370,6 +1372,8 @@ export default tseslint.config(
       ],
       // Disallow iterating over an array with a for-in loop
       '@typescript-eslint/no-for-in-array': 'error',
+      // Disallow type operations that resolve to the empty object type
+      '@typescript-eslint/no-generated-empty-object-type': 'error',
       // Disallow the use of eval()-like functions
       '@typescript-eslint/no-implied-eval': 'error',
       // Enforce the use of top-level import type qualifier
@@ -1401,7 +1405,7 @@ export default tseslint.config(
         'error',
         {
           // Specific numbers that are allowed
-          ignore: [-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 16, 24, 32, 40, 48, 56, 60, 64, 100, 1000, 3000],
+          ignore: [-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 16, 24, 32, 40, 48, 50, 56, 60, 64, 100, 1000, 3000, 5491],
           // Whether to ignore numbers used as array indexes
           ignoreArrayIndexes: true,
           // Whether default values are considered okay
@@ -1469,7 +1473,7 @@ export default tseslint.config(
       // Disallow non-null assertions after an optional chain expression
       '@typescript-eslint/no-non-null-asserted-optional-chain': 'error',
       // Disallow non-null assertions using the ! postfix operator
-      '@typescript-eslint/no-non-null-assertion': 'off',
+      '@typescript-eslint/no-non-null-assertion': 'error',
       // Disallow variable redeclaration
       '@typescript-eslint/no-redeclare': [
         'off', // Handled by TypeScript compiler
@@ -1599,14 +1603,24 @@ export default tseslint.config(
       '@typescript-eslint/no-unsafe-assignment': 'error',
       // Disallow calling a value with type any
       '@typescript-eslint/no-unsafe-call': 'error',
+      // Disallow assigning non-instance values to class instance typed locations
+      '@typescript-eslint/no-unsafe-class-instance-assignment': 'error',
       // Disallow unsafe declaration merging
       '@typescript-eslint/no-unsafe-declaration-merging': 'error',
+      // Disallow assigning non-enum values to enum typed locations
+      '@typescript-eslint/no-unsafe-enum-assignment': 'error',
       // Disallow comparing an enum value with a non-enum value
       '@typescript-eslint/no-unsafe-enum-comparison': 'off', // Not wanted
       // Disallow using the unsafe built-in Function type
       '@typescript-eslint/no-unsafe-function-type': 'error',
       // Disallow member access on a value with type any
-      '@typescript-eslint/no-unsafe-member-access': 'error',
+      '@typescript-eslint/no-unsafe-member-access': [
+        'error',
+        {
+          // Whether to allow `?.` optional chains on `any` values
+          allowOptionalChaining: false,
+        },
+      ],
       // Disallow returning a value with type any from a function
       '@typescript-eslint/no-unsafe-return': 'error',
       // Disallow type assertions that narrow a type
@@ -1629,12 +1643,16 @@ export default tseslint.config(
           ignoreDirectives: false,
         },
       ],
+      // Disallow unused private class members
+      '@typescript-eslint/no-unused-private-class-members': 'error',
       // Disallow unused variables
       '@typescript-eslint/no-unused-vars': [
         'error',
         {
           // Checks all variables for usage
           vars: 'all',
+          // Exceptions not to check for usage
+          varsIgnorePattern: undefined,
           // Unused positional arguments that occur before the last used argument will not be checked
           args: 'after-used',
           // Exceptions not to check for usage
@@ -1649,6 +1667,13 @@ export default tseslint.config(
           ignoreRestSiblings: false,
           // Ignores classes containing static initialization blocks
           ignoreClassWithStaticInitBlock: false,
+          // Whether to ignore using or await using declarations
+          ignoreUsingDeclarations: false,
+          // Configurable automatic fixes for different types of unused variables
+          enableAutofixRemoval: {
+            // Whether to enable automatic removal of unused imports
+            imports: true,
+          },
           // Report variables that match any of the valid ignore pattern options
           reportUsedIgnorePattern: false,
         },
@@ -1658,7 +1683,7 @@ export default tseslint.config(
         'error',
         {
           // Whether the rule checks function declarations
-          functions: false,
+          functions: true,
           // Whether the rule checks class declarations
           classes: true,
           // Whether the rule checks variable declarations
@@ -1675,6 +1700,8 @@ export default tseslint.config(
       ],
       // Disallow unnecessary constructors
       '@typescript-eslint/no-useless-constructor': 'error',
+      // Disallow default values that will never be used
+      '@typescript-eslint/no-useless-default-assignment': 'error',
       // Disallow empty exports that don't change anything in a module file
       '@typescript-eslint/no-useless-empty-export': 'error',
       // Disallow using confusing built-in primitive class wrappers
@@ -1913,6 +1940,7 @@ export default tseslint.config(
           allowString: true,
         },
       ],
+      '@typescript-eslint/strict-void-return': 'off', // Callback return values are intentionally ignored by consumers
       // Require switch-case statements to be exhaustive
       '@typescript-eslint/switch-exhaustiveness-check': [
         'error',

@@ -10,7 +10,8 @@ import { cert, initializeApp, type ServiceAccount } from 'firebase-admin/app'
 import { getMessaging } from 'firebase-admin/messaging'
 import * as semver from 'semver'
 
-const octokit = github.getOctokit(process.env['GITHUB_TOKEN']!)
+const githubToken = process.env['GITHUB_TOKEN']
+const octokit = github.getOctokit(githubToken ?? '')
 const tag = process.env['GITHUB_REF_NAME'] ?? ''
 
 // Define order and replacement of semantic prefixes
@@ -32,6 +33,11 @@ const prefixMapping: Record<string, string> = {
 
 export async function run(): Promise<void> {
   try {
+    if (!githubToken) {
+      core.setFailed('⚠️ GitHub Releases requires a GitHub token')
+      return
+    }
+
     if (!tag) {
       core.setFailed('⚠️ GitHub Releases requires a tag')
       return
@@ -53,7 +59,7 @@ export async function run(): Promise<void> {
 }
 
 async function createGithubRelease(): Promise<Release> {
-  const [owner, repo] = process.env['GITHUB_REPOSITORY']!.split('/')
+  const [owner, repo] = getRepositoryOwnerAndName()
   const releaseNotes = await generateReleaseNotes()
   core.info(`👨‍🏭 Creating new GitHub release for tag '${tag}'`)
 
@@ -79,7 +85,7 @@ async function uploadAsset(release: Release): Promise<void> {
   }
 
   const asset = getAsset(filePath, assetName)
-  const [owner, repo] = process.env['GITHUB_REPOSITORY']!.split('/')
+  const [owner, repo] = getRepositoryOwnerAndName()
 
   core.info(`⬆️ Uploading asset '${asset.name}'`)
   await octokit.rest.repos.uploadReleaseAsset({
@@ -145,8 +151,22 @@ async function sendFirebaseMessage(): Promise<void> {
   })
 }
 
+function getRepositoryOwnerAndName(): [string, string] {
+  const repository = process.env['GITHUB_REPOSITORY']
+  if (!repository) {
+    throw new Error('⚠️ GitHub Releases requires a repository')
+  }
+
+  const [owner, repo] = repository.split('/')
+  if (!owner || !repo) {
+    throw new Error(`⚠️ Invalid repository '${repository}'`)
+  }
+
+  return [owner, repo]
+}
+
 async function generateReleaseNotes(): Promise<string> {
-  const [owner, repo] = process.env['GITHUB_REPOSITORY']!.split('/')
+  const [owner, repo] = getRepositoryOwnerAndName()
   const { newVersion, oldVersion } = await fetchTagsFromGitHub(owner, repo)
   const commitMessages = await fetchCommitMessages(owner, repo, newVersion, oldVersion)
   const groupedCommits = groupCommitsByPrefix(commitMessages)
