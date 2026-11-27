@@ -3,7 +3,6 @@
   "version": "4.6.0",
   "description": "A GitHub Action that creates a Github release with file upload and automatically generated release notes.",
   "author": "Yakuhzi",
-  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/yakuhzi/action-release.git"
@@ -29,11 +28,11 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@types/node": "^26.6.10",
+    "@types/node": "^26.6.11",
     "@types/semver": "^7.8.0",
     "@typescript-eslint/eslint-plugin": "^8.74.0",
     "@typescript-eslint/parser": "^8.74.0",
-    "eslint": "^10.15.0",
+    "eslint": "^10.16.0",
     "globals": "^17.14.0",
     "prettier": "^3.10.1",
     "typescript": "^6.0.3",

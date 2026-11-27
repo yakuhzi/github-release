@@ -1,5 +1,5 @@
-// ESLint 10.15.0 / TS-ESLint 8.73.0
-// Updated 21.11.2026
+// ESLint 10.16.0 / TS-ESLint 8.74.0
+// Updated 27.11.2026
 
 import tseslint from 'typescript-eslint'
 import commonConfig from './eslint.config.common.mjs'
